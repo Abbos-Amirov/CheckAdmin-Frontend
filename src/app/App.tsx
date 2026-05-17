@@ -4,6 +4,7 @@ import { ReceiptsProvider } from '@/app/providers/ReceiptsProvider';
 import { ThemeProvider } from '@/app/providers/ThemeProvider';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
+import { EmployeeDetailPage } from '@/pages/employees/EmployeeDetailPage';
 import { EmployeesPage } from '@/pages/employees/EmployeesPage';
 import { ReceiptsPage } from '@/pages/receipts/ReceiptsPage';
 import { ReportsPage } from '@/pages/reports/ReportsPage';
@@ -18,6 +19,7 @@ export function App() {
             <Routes>
               <Route element={<AdminLayout />}>
                 <Route index element={<DashboardPage />} />
+                <Route path="employees/:employeeId" element={<EmployeeDetailPage />} />
                 <Route path="employees" element={<EmployeesPage />} />
                 <Route path="receipts" element={<ReceiptsPage />} />
                 <Route path="reports" element={<ReportsPage />} />

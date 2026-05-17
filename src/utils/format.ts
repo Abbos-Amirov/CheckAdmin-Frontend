@@ -14,8 +14,9 @@ export function formatDashboardMonth(date: Date, locale: Locale): string {
   }).format(date);
 }
 
+/** Raqamni locale bo‘yicha guruhlaydi; valyuta yozuvi `t('currency')` (won / 원) bilan qo‘shiladi. */
 export function formatCurrency(amount: number, locale: Locale): string {
-  const lc = locale === 'ko' ? 'ko-KR' : 'uz-Latn-UZ';
+  const lc = locale === 'ko' ? 'ko-KR' : 'en-US';
   return new Intl.NumberFormat(lc, { maximumFractionDigits: 0 }).format(amount);
 }
 

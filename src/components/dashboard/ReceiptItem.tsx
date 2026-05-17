@@ -1,4 +1,5 @@
 import { useI18n } from '@/app/providers/I18nProvider';
+import type { WorkplaceType } from '@/types/employee.types';
 import type { Receipt } from '@/types/receipt.types';
 import { formatCurrency } from '@/utils/format';
 import { Button } from '@/components/common/Button';
@@ -6,12 +7,21 @@ import styles from './ReceiptItem.module.scss';
 
 type Props = {
   receipt: Receipt;
+  workplace: WorkplaceType;
+  monthlyAllocation: number;
   onApprove: () => void;
   onReject: () => void;
 };
 
-export function ReceiptItem({ receipt, onApprove, onReject }: Props) {
+export function ReceiptItem({
+  receipt,
+  workplace,
+  monthlyAllocation,
+  onApprove,
+  onReject,
+}: Props) {
   const { t, locale } = useI18n();
+  const isInternal = workplace === 'INTERNAL';
 
   return (
     <div className={styles.row}>
@@ -26,9 +36,27 @@ export function ReceiptItem({ receipt, onApprove, onReject }: Props) {
         </svg>
       </div>
       <div className={styles.meta}>
-        <div className={styles.name}>{receipt.employeeName}</div>
-        <div className={styles.amount}>
-          {formatCurrency(receipt.amount, locale)} {t('currency')}
+        <div className={styles.nameRow}>
+          <span className={styles.name}>{receipt.employeeName}</span>
+          <span
+            className={`${styles.typeBadge} ${isInternal ? styles.typeIn : styles.typeOut}`}
+          >
+            {isInternal ? t('workplaceInternalShort') : t('workplaceExternalShort')}
+          </span>
+        </div>
+        <div className={styles.lines}>
+          <div className={styles.line}>
+            <span className={styles.lineLabel}>{t('receiptChequeLine')}</span>
+            <span className={styles.lineValue}>
+              {formatCurrency(receipt.amount, locale)} {t('currency')}
+            </span>
+          </div>
+          <div className={styles.line}>
+            <span className={styles.lineLabel}>{t('receiptMonthlyAllocation')}</span>
+            <span className={styles.lineValueEm}>
+              {formatCurrency(monthlyAllocation, locale)} {t('currency')}
+            </span>
+          </div>
         </div>
       </div>
       <div className={styles.actions}>

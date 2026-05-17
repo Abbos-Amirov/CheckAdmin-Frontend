@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { mockEmployees } from '@/data/mockDashboard';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { formatCurrency } from '@/utils/format';
@@ -7,42 +8,61 @@ import styles from './EmployeesPage.module.scss';
 export function EmployeesPage() {
   const { t, locale } = useI18n();
 
+  const sorted = [...mockEmployees].sort((a, b) =>
+    a.fullName.localeCompare(b.fullName, undefined, { sensitivity: 'base' }),
+  );
+
   return (
     <div className={styles.page}>
       <p className={styles.lead}>{t('employeesPageHint')}</p>
 
-      <Card className={styles.card}>
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>{t('employees')}</th>
-                <th>{t('receiptAmount')}</th>
-                <th>{t('employeesStatus')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockEmployees.map((emp) => (
-                <tr key={emp.id}>
-                  <td className={styles.name}>{emp.fullName}</td>
-                  <td>
-                    {formatCurrency(emp.monthlyAmount, locale)} {t('currency')}
-                  </td>
-                  <td>
+      <ul className={styles.grid}>
+        {sorted.map((emp) => (
+          <li key={emp.id} className={styles.cell}>
+            <Link className={styles.cardLink} to={`/employees/${emp.id}`}>
+              <Card className={styles.card}>
+                <div className={styles.photoWrap}>
+                  <img
+                    className={styles.photo}
+                    src={emp.photoUrl}
+                    alt={emp.fullName}
+                    width={320}
+                    height={320}
+                  />
+                </div>
+                <div className={styles.body}>
+                  <div className={styles.name}>{emp.fullName}</div>
+                  <div className={styles.meta}>
                     <span
-                      className={`${styles.badge} ${
-                        emp.status === 'ACTIVE' ? styles.badgeOk : styles.badgeOff
+                      className={`${styles.wp} ${
+                        emp.workplace === 'INTERNAL' ? styles.wpIn : styles.wpOut
                       }`}
                     >
-                      {emp.status}
+                      {emp.workplace === 'INTERNAL'
+                        ? t('workplaceInternalShort')
+                        : t('workplaceExternalShort')}
                     </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                  </div>
+                  <div className={styles.amount}>
+                    {formatCurrency(emp.monthlyAmount, locale)} {t('currency')}
+                  </div>
+                  <div className={styles.status}>
+                    <span
+                      className={`${styles.statusBadge} ${
+                        emp.status === 'ACTIVE' ? styles.statusOk : styles.statusOff
+                      }`}
+                    >
+                      {emp.status === 'ACTIVE'
+                        ? t('statusActiveLabel')
+                        : t('statusInactiveLabel')}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

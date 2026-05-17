@@ -1,0 +1,156 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.back {
+  align-self: flex-start;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.missing {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.card {
+  padding: 22px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(200px, 320px) 1fr;
+  gap: 28px;
+  align-items: start;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.photoCol {
+  width: 100%;
+}
+
+.photoFrame {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: rgba(0, 0, 0, 0.04);
+
+  [data-theme='dark'] & {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.info {
+  min-width: 0;
+}
+
+.name {
+  margin: 0 0 22px;
+  font-size: clamp(1.375rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.dl {
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  &:first-of-type {
+    padding-top: 0;
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+.row dt {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.row dd {
+  margin: 0;
+}
+
+.amount {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.wp {
+  display: inline-flex;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.wpIn {
+  background: rgba(45, 157, 95, 0.14);
+  color: var(--color-success);
+}
+
+.wpOut {
+  background: rgba(212, 137, 74, 0.14);
+  color: var(--color-warning);
+}
+
+.st {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.stOk {
+  background: rgba(45, 157, 95, 0.12);
+  color: var(--color-success);
+}
+
+.stOff {
+  background: rgba(136, 136, 136, 0.18);
+  color: var(--color-text-muted);
+}

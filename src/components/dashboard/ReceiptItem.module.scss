@@ -4,7 +4,7 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 14px;
-  align-items: center;
+  align-items: flex-start;
   padding: 14px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
@@ -34,6 +34,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 2px;
 
   @media (max-width: 640px) {
     grid-area: icon;
@@ -48,21 +49,72 @@
   }
 }
 
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
 .name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9375rem;
 }
 
-.amount {
-  margin-top: 4px;
-  font-size: 0.875rem;
+.typeBadge {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.typeIn {
+  background: rgba(45, 157, 95, 0.14);
+  color: var(--color-success);
+}
+
+.typeOut {
+  background: rgba(212, 137, 74, 0.14);
+  color: var(--color-warning);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  font-size: 0.8125rem;
+}
+
+.lineLabel {
   color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.lineValue {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.lineValueEm {
+  font-weight: 700;
+  color: var(--color-accent);
 }
 
 .actions {
   display: flex;
   gap: 10px;
   flex-shrink: 0;
+  padding-top: 2px;
 
   @media (max-width: 640px) {
     grid-area: actions;

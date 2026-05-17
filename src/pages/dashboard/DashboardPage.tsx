@@ -9,7 +9,7 @@ import {
 import { EmployeeProgressCard } from '@/components/dashboard/EmployeeProgressCard';
 import { PendingReceiptsCard } from '@/components/dashboard/PendingReceiptsCard';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { formatCompactMonthlySum } from '@/utils/format';
+import { formatCompactMonthlySum, formatCurrency } from '@/utils/format';
 import styles from './DashboardPage.module.scss';
 
 export function DashboardPage() {
@@ -20,6 +20,19 @@ export function DashboardPage() {
     () => receipts.filter((r) => r.status === 'PENDING').length,
     [receipts],
   );
+
+  const { payrollInternalTotal, payrollExternalTotal } = useMemo(() => {
+    let internal = 0;
+    let external = 0;
+    for (const emp of mockEmployees) {
+      if (emp.workplace === 'INTERNAL') internal += emp.monthlyAmount;
+      else external += emp.monthlyAmount;
+    }
+    return {
+      payrollInternalTotal: internal,
+      payrollExternalTotal: external,
+    };
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -47,6 +60,16 @@ export function DashboardPage() {
           value={mockDashboardStats.approvedReports}
           hint={t('reportsSent')}
           tone="success"
+        />
+        <StatCard
+          label={t('payrollInternal')}
+          value={`${formatCurrency(payrollInternalTotal, locale)}`}
+          hint={`${t('payrollMonthHint')} · ${t('currency')}`}
+        />
+        <StatCard
+          label={t('payrollExternal')}
+          value={`${formatCurrency(payrollExternalTotal, locale)}`}
+          hint={`${t('payrollMonthHint')} · ${t('currency')}`}
         />
       </section>
 
