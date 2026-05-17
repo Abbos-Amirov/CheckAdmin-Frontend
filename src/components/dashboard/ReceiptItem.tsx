@@ -46,6 +46,10 @@ export function ReceiptItem({
         </div>
         <div className={styles.lines}>
           <div className={styles.line}>
+            <span className={styles.lineLabel}>{t('receiptTransactionCode')}</span>
+            <span className={styles.lineValueMono}>{receipt.receiptCode}</span>
+          </div>
+          <div className={styles.line}>
             <span className={styles.lineLabel}>{t('receiptChequeLine')}</span>
             <span className={styles.lineValue}>
               {formatCurrency(receipt.amount, locale)} {t('currency')}

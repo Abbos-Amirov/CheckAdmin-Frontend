@@ -27,3 +27,15 @@ export function formatCompactMonthlySum(amount: number, locale: Locale): string 
   }
   return formatCurrency(amount, locale);
 }
+
+/** `month` — 1…12. Yil faqat kabisa/kalendar uchun kerak emas. */
+export function formatCalendarMonth(
+  month: number,
+  locale: Locale,
+  style: 'long' | 'short' = 'long',
+): string {
+  const safe = Math.min(12, Math.max(1, month));
+  const d = new Date(2020, safe - 1, 15);
+  const lc = locale === 'ko' ? 'ko-KR' : 'en-US';
+  return new Intl.DateTimeFormat(lc, { month: style }).format(d);
+}
