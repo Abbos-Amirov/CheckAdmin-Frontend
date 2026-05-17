@@ -3,48 +3,64 @@
 }
 
 .head {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .title {
   margin: 0;
   font-size: 1.0625rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .groups {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
 }
 
 .section {
-  padding-top: 4px;
-  border-top: 1px solid var(--color-border);
+  padding: 18px 18px 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: linear-gradient(
+    160deg,
+    rgba(0, 0, 0, 0.025) 0%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-  &:first-of-type {
-    border-top: none;
-    padding-top: 0;
+  [data-theme='dark'] & {
+    background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.07) 100%
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 }
 
 .sectionHead {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--color-border);
 }
 
 .sectionTitle {
-  margin: 0 0 6px;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
 
 .sectionBudget {
   margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
   color: var(--color-text);
 }
 
@@ -55,15 +71,6 @@
 }
 
 .groupList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.list {
   list-style: none;
   margin: 0;
   padding: 0;

@@ -9,6 +9,10 @@ type Props = {
   receipt: Receipt;
   workplace: WorkplaceType;
   monthlyAllocation: number;
+  /** Shu oy (demo) barcha cheklar summasi — ishchi bo‘yicha. */
+  monthReceiptsTotal: number;
+  employeePhotoUrl: string;
+  employeeInitial: string;
   onApprove: () => void;
   onReject: () => void;
 };
@@ -17,6 +21,9 @@ export function ReceiptItem({
   receipt,
   workplace,
   monthlyAllocation,
+  monthReceiptsTotal,
+  employeePhotoUrl,
+  employeeInitial,
   onApprove,
   onReject,
 }: Props) {
@@ -25,15 +32,20 @@ export function ReceiptItem({
 
   return (
     <div className={styles.row}>
-      <div className={styles.icon} aria-hidden>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
+      <div className={styles.avatarCol}>
+        {employeePhotoUrl ? (
+          <img
+            className={styles.avatar}
+            src={employeePhotoUrl}
+            alt=""
+            width={52}
+            height={52}
           />
-          <path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
+        ) : (
+          <div className={styles.avatarFallback} aria-hidden>
+            {employeeInitial}
+          </div>
+        )}
       </div>
       <div className={styles.meta}>
         <div className={styles.nameRow}>
@@ -44,24 +56,32 @@ export function ReceiptItem({
             {isInternal ? t('workplaceInternalShort') : t('workplaceExternalShort')}
           </span>
         </div>
-        <div className={styles.lines}>
-          <div className={styles.line}>
-            <span className={styles.lineLabel}>{t('receiptTransactionCode')}</span>
-            <span className={styles.lineValueMono}>{receipt.receiptCode}</span>
-          </div>
-          <div className={styles.line}>
-            <span className={styles.lineLabel}>{t('receiptChequeLine')}</span>
-            <span className={styles.lineValue}>
-              {formatCurrency(receipt.amount, locale)} {t('currency')}
-            </span>
-          </div>
-          <div className={styles.line}>
-            <span className={styles.lineLabel}>{t('receiptMonthlyAllocation')}</span>
-            <span className={styles.lineValueEm}>
-              {formatCurrency(monthlyAllocation, locale)} {t('currency')}
-            </span>
-          </div>
+
+        <div className={styles.codeBlock}>
+          <span className={styles.codeLabel}>{t('receiptTransactionCode')}</span>
+          <span className={styles.codeValue}>{receipt.receiptCode}</span>
         </div>
+
+        <dl className={styles.stats}>
+          <div className={styles.stat}>
+            <dt>{t('receiptChequeLine')}</dt>
+            <dd>
+              {formatCurrency(receipt.amount, locale)} {t('currency')}
+            </dd>
+          </div>
+          <div className={styles.stat}>
+            <dt>{t('pendingReceiptMonthTotal')}</dt>
+            <dd className={styles.statHighlight}>
+              {formatCurrency(monthReceiptsTotal, locale)} {t('currency')}
+            </dd>
+          </div>
+          <div className={styles.stat}>
+            <dt>{t('receiptMonthlyAllocation')}</dt>
+            <dd className={styles.statAllocation}>
+              {formatCurrency(monthlyAllocation, locale)} {t('currency')}
+            </dd>
+          </div>
+        </dl>
       </div>
       <div className={styles.actions}>
         <Button variant="outline" type="button" onClick={onApprove}>

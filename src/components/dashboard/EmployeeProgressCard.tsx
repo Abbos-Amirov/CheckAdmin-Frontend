@@ -1,4 +1,8 @@
 import { useMemo } from 'react';
+import {
+  PAYROLL_CAP_EXTERNAL_WON,
+  PAYROLL_CAP_INTERNAL_WON,
+} from '@/data/mockDashboard';
 import { useI18n } from '@/app/providers/I18nProvider';
 import type { Employee } from '@/types/employee.types';
 import { formatCurrency } from '@/utils/format';
@@ -9,11 +13,28 @@ type Props = {
   employees: Employee[];
 };
 
+function payrollCap(emp: Employee): number {
+  return emp.workplace === 'INTERNAL' ? PAYROLL_CAP_INTERNAL_WON : PAYROLL_CAP_EXTERNAL_WON;
+}
+
 export function EmployeeProgressCard({ employees }: Props) {
   const { t, locale } = useI18n();
 
-  const maxAmount = useMemo(
-    () => Math.max(...employees.map((e) => e.monthlyAmount), 1),
+  const rows = useMemo(
+    () =>
+      employees.map((emp) => {
+        const cap = payrollCap(emp);
+        /** Demo: ishchi kartasidagi oylik ovqat puli — limit bilan solishtiriladi. */
+        const spent = emp.monthlyAmount;
+        const utilization = cap > 0 ? spent / cap : 0;
+        const pctFill = Math.min(100, Math.max(0, utilization * 100));
+        const labelLeftPct = Math.min(96, Math.max(4, pctFill));
+
+        const barClass =
+          utilization >= 0.92 ? styles.barWarn : utilization >= 0.7 ? styles.barMid : styles.barOk;
+
+        return { emp, cap, spent, pctFill, labelLeftPct, barClass };
+      }),
     [employees],
   );
 
@@ -23,28 +44,30 @@ export function EmployeeProgressCard({ employees }: Props) {
         <h2 className={styles.title}>{t('submittedEmployees')}</h2>
       </div>
       <ul className={styles.list}>
-        {employees.map((emp) => {
-          const ratio = emp.monthlyAmount / maxAmount;
-          const barClass =
-            ratio < 0.35 ? styles.barWarn : ratio < 0.65 ? styles.barMid : styles.barOk;
-
-          return (
-            <li key={emp.id} className={styles.row}>
-              <div className={styles.rowTop}>
-                <span className={styles.name}>{emp.fullName}</span>
-                <span className={styles.amount}>
-                  {formatCurrency(emp.monthlyAmount, locale)} {t('currency')}
-                </span>
-              </div>
+        {rows.map(({ emp, cap, spent, pctFill, labelLeftPct, barClass }) => (
+          <li key={emp.id} className={styles.row}>
+            <div className={styles.rowTop}>
+              <span className={styles.name}>{emp.fullName}</span>
+              <span className={styles.cap} title={t('employeeProgressCapTitle')}>
+                {formatCurrency(cap, locale)} {t('currency')}
+              </span>
+            </div>
+            <div className={styles.barBlock}>
+              <span
+                className={styles.spentTag}
+                style={{ left: `${labelLeftPct}%` }}
+              >
+                {formatCurrency(spent, locale)} {t('currency')}
+              </span>
               <div className={styles.track} aria-hidden>
                 <div
                   className={`${styles.bar} ${barClass}`}
-                  style={{ width: `${Math.round(ratio * 100)}%` }}
+                  style={{ width: `${Math.round(pctFill)}%` }}
                 />
               </div>
-            </li>
-          );
-        })}
+            </div>
+          </li>
+        ))}
       </ul>
     </Card>
   );

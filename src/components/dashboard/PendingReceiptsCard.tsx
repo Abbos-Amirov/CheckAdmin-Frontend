@@ -3,6 +3,7 @@ import { useI18n } from '@/app/providers/I18nProvider';
 import { mockEmployees } from '@/data/mockDashboard';
 import type { Receipt } from '@/types/receipt.types';
 import type { WorkplaceType } from '@/types/employee.types';
+import { receiptInDemoMonth } from '@/utils/receiptMonthFilter';
 import { formatCurrency } from '@/utils/format';
 import { Card } from '@/components/common/Card';
 import { ReceiptItem } from '@/components/dashboard/ReceiptItem';
@@ -13,6 +14,12 @@ type Props = {
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
 };
+
+function employeeMonthReceiptsTotal(allReceipts: Receipt[], employeeId: string): number {
+  return allReceipts
+    .filter((r) => r.employeeId === employeeId && receiptInDemoMonth(r.createdAt))
+    .reduce((sum, r) => sum + r.amount, 0);
+}
 
 export function PendingReceiptsCard({
   receipts,
@@ -66,6 +73,9 @@ export function PendingReceiptsCard({
             const emp = byId.get(receipt.employeeId);
             const monthlyAllocation = emp?.monthlyAmount ?? 0;
             const workplace = emp?.workplace ?? 'EXTERNAL';
+            const monthReceiptsTotal = employeeMonthReceiptsTotal(receipts, receipt.employeeId);
+            const photoUrl = emp?.photoUrl ?? '';
+            const initial = receipt.employeeName.trim().charAt(0).toUpperCase() || '?';
 
             return (
               <li key={receipt.id}>
@@ -73,6 +83,9 @@ export function PendingReceiptsCard({
                   receipt={receipt}
                   workplace={workplace}
                   monthlyAllocation={monthlyAllocation}
+                  monthReceiptsTotal={monthReceiptsTotal}
+                  employeePhotoUrl={photoUrl}
+                  employeeInitial={initial}
                   onApprove={() => onApprove(receipt.id)}
                   onReject={() => onReject(receipt.id)}
                 />

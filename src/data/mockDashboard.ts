@@ -4,7 +4,7 @@ import type { Employee } from '@/types/employee.types';
 export { mockReceipts } from './mockReceiptsData';
 
 export const mockDashboardStats: DashboardStats = {
-  totalEmployees: 48,
+  totalEmployees: 52,
   pendingReceipts: 6,
   monthlyTotal: 4_200_000,
   approvedReports: 36,
@@ -14,7 +14,10 @@ export const mockDashboardMeta: DashboardMeta = {
   newEmployeesThisMonth: 6,
 };
 
-/** Ichki: Abbos + Faysullz (jamisi 400 000 won). Tashqi: qolganlari (525 000 won). */
+/** Ichki xodimlar limiti 400 000 won; tashqi — 525 000 won (payroll kartalari). */
+export const PAYROLL_CAP_INTERNAL_WON = 400_000;
+export const PAYROLL_CAP_EXTERNAL_WON = 525_000;
+
 export const mockEmployees: Employee[] = [
   {
     id: 'e1',
@@ -63,6 +66,38 @@ export const mockEmployees: Employee[] = [
     status: 'ACTIVE',
     workplace: 'EXTERNAL',
     photoUrl: '/avatars/furqat.png',
+  },
+  {
+    id: 'e7',
+    fullName: 'Oscar',
+    monthlyAmount: 110_000,
+    status: 'ACTIVE',
+    workplace: 'EXTERNAL',
+    photoUrl: '/avatars/oscar.png',
+  },
+  {
+    id: 'e8',
+    fullName: 'Ali',
+    monthlyAmount: 115_000,
+    status: 'ACTIVE',
+    workplace: 'EXTERNAL',
+    photoUrl: '/avatars/ali.png',
+  },
+  {
+    id: 'e9',
+    fullName: 'Oybek',
+    monthlyAmount: 185_000,
+    status: 'ACTIVE',
+    workplace: 'INTERNAL',
+    photoUrl: '/avatars/oybek.png',
+  },
+  {
+    id: 'e10',
+    fullName: 'Otabek',
+    monthlyAmount: 102_000,
+    status: 'ACTIVE',
+    workplace: 'EXTERNAL',
+    photoUrl: '/avatars/otabek.png',
   },
 ];
 
