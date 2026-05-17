@@ -31,7 +31,7 @@ export const uz = {
   employeesPageTitle: 'Ishchilar',
   employeesStatus: 'Holat',
   employeesPageHint:
-    'Bu sahifada barcha ishchilar ro‘yxati ko‘rinadi. Keyin API bilan bog‘laysiz.',
+    'Rasm ustiga bosing — ishchi profili va uning ovqat cheklari ochiladi. Keyin API bilan bog‘laysiz.',
   receiptsPageTitle: 'Cheklar',
   receiptsPageHint:
     'Yuqoridagi oylardan birini tanlang — faqat shu oyga tegishli cheklar chiqadi. Har bir chek blokida kod, do‘kon, xaridlar va to‘lov ko‘rinadi.',
@@ -72,6 +72,11 @@ export const uz = {
   backToEmployees: 'Ishchilar ro‘yxatiga',
   employeeNotFound: 'Xodim topilmadi',
   employeeDetailMonthly: 'Oy uchun ajratilgan',
+  employeeReceiptsSectionTitle: '{{year}} yil — ovqat cheklari',
+  employeeReceiptsLead:
+    'Har bir oy uchun skan va jami summa (demo ma’lumot).',
+  employeeReceiptsYearTotalsAria: 'Oy tanlash; tugmada oy summasi ko‘rsatiladi',
+  employeeReceiptsEmptyMonth: 'Bu oy uchun chek yo‘q.',
   statusActiveLabel: 'Faol',
   statusInactiveLabel: 'Nofaol',
   reportsYearLabel: '{{year}} yil',

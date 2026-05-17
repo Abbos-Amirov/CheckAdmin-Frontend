@@ -1,19 +1,66 @@
+import { useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { getEmployeeById } from '@/data/mockDashboard';
 import { useI18n } from '@/app/providers/I18nProvider';
-import { formatCurrency } from '@/utils/format';
+import { useReceipts } from '@/app/providers/ReceiptsProvider';
+import { formatCalendarMonth, formatCurrency, formatDashboardMonth } from '@/utils/format';
+import { receiptScanImageUrl } from '@/data/receiptScanAssets';
 import { Card } from '@/components/common/Card';
 import styles from './EmployeeDetailPage.module.scss';
+
+/** Demo yili — Cheklar sahifasi bilan bir xil. */
+const EMPLOYEE_RECEIPTS_YEAR = 2026;
+
+const MONTH_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
   const { t, locale } = useI18n();
+  const { receipts } = useReceipts();
+  const [selectedMonth, setSelectedMonth] = useState(5);
 
   if (!employeeId) {
     return <Navigate to="/employees" replace />;
   }
 
   const emp = getEmployeeById(employeeId);
+
+  const employeeReceipts = useMemo(
+    () => receipts.filter((r) => r.employeeId === employeeId),
+    [receipts, employeeId],
+  );
+
+  const statsByMonth = useMemo(() => {
+    const totals = Array.from({ length: 12 }, () => ({ count: 0, total: 0 }));
+    for (const r of employeeReceipts) {
+      const d = new Date(r.createdAt);
+      if (d.getUTCFullYear() !== EMPLOYEE_RECEIPTS_YEAR) continue;
+      const mi = d.getUTCMonth();
+      totals[mi].count += 1;
+      totals[mi].total += r.amount;
+    }
+    return totals;
+  }, [employeeReceipts]);
+
+  const displayedReceipts = useMemo(() => {
+    return employeeReceipts
+      .filter((r) => {
+        const d = new Date(r.createdAt);
+        return (
+          d.getUTCFullYear() === EMPLOYEE_RECEIPTS_YEAR &&
+          d.getUTCMonth() + 1 === selectedMonth
+        );
+      })
+      .sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+  }, [employeeReceipts, selectedMonth]);
+
+  const selectedStat = statsByMonth[selectedMonth - 1];
+  const periodLabelDate = useMemo(
+    () => new Date(EMPLOYEE_RECEIPTS_YEAR, selectedMonth - 1, 1),
+    [selectedMonth],
+  );
 
   if (!emp) {
     return (
@@ -84,6 +131,88 @@ export function EmployeeDetailPage() {
             </dl>
           </div>
         </div>
+      </Card>
+
+      <Card className={styles.receiptsCard}>
+        <h3 className={styles.receiptsTitle}>
+          {t('employeeReceiptsSectionTitle', { year: EMPLOYEE_RECEIPTS_YEAR })}
+        </h3>
+        <p className={styles.receiptsLead}>{t('employeeReceiptsLead')}</p>
+
+        <p className={styles.yearLabel}>{t('receiptsYearLabel', { year: EMPLOYEE_RECEIPTS_YEAR })}</p>
+        <div
+          className={styles.monthStrip}
+          role="tablist"
+          aria-label={t('employeeReceiptsYearTotalsAria')}
+        >
+          {MONTH_INDEXES.map((m) => {
+            const st = statsByMonth[m - 1];
+            const active = selectedMonth === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`${styles.monthBtn} ${active ? styles.monthBtnActive : ''}`}
+                onClick={() => setSelectedMonth(m)}
+              >
+                <span className={styles.monthBtnLabel}>
+                  {formatCalendarMonth(m, locale, 'short')}
+                </span>
+                {st.count > 0 ? (
+                  <span className={styles.monthBtnBadge} aria-hidden>
+                    {st.count}
+                  </span>
+                ) : null}
+                <span className={styles.monthBtnSum}>
+                  {st.total > 0
+                    ? `${formatCurrency(st.total, locale)} ${t('currency')}`
+                    : '—'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className={styles.monthDetail}>
+          <p className={styles.monthDetailTitle}>
+            {formatDashboardMonth(periodLabelDate, locale)}
+          </p>
+          <p className={styles.monthDetailMeta}>
+            <span>{t('receiptsChecksCount', { count: selectedStat.count })}</span>
+            <span className={styles.monthDetailDot}>·</span>
+            <span>
+              {t('receiptsStatTotal')}: {formatCurrency(selectedStat.total, locale)}{' '}
+              {t('currency')}
+            </span>
+          </p>
+        </div>
+
+        {displayedReceipts.length === 0 ? (
+          <p className={styles.emptyMonth}>{t('employeeReceiptsEmptyMonth')}</p>
+        ) : (
+          <ul className={styles.scanGallery} role="list">
+            {displayedReceipts.map((r) => (
+              <li key={r.id} className={styles.scanThumb} role="listitem">
+                <div className={styles.scanThumbFrame}>
+                  <img
+                    src={receiptScanImageUrl(r.id)}
+                    alt=""
+                    className={styles.scanThumbImg}
+                    width={160}
+                    height={280}
+                    loading="lazy"
+                  />
+                </div>
+                <span className={styles.scanThumbCap}>{r.receiptCode}</span>
+                <span className={styles.scanThumbAmt}>
+                  {formatCurrency(r.amount, locale)} {t('currency')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </div>
   );

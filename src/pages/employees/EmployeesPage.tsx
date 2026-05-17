@@ -19,47 +19,51 @@ export function EmployeesPage() {
       <ul className={styles.grid}>
         {sorted.map((emp) => (
           <li key={emp.id} className={styles.cell}>
-            <Link className={styles.cardLink} to={`/employees/${emp.id}`}>
-              <Card className={styles.card}>
+            <Card className={styles.card}>
+              <Link
+                className={styles.photoLink}
+                to={`/employees/${emp.id}`}
+                aria-label={`${emp.fullName} — ${t('employeesPageTitle')}`}
+              >
                 <div className={styles.photoWrap}>
                   <img
                     className={styles.photo}
                     src={emp.photoUrl}
-                    alt={emp.fullName}
+                    alt=""
                     width={320}
                     height={320}
                   />
                 </div>
-                <div className={styles.body}>
-                  <div className={styles.name}>{emp.fullName}</div>
-                  <div className={styles.meta}>
-                    <span
-                      className={`${styles.wp} ${
-                        emp.workplace === 'INTERNAL' ? styles.wpIn : styles.wpOut
-                      }`}
-                    >
-                      {emp.workplace === 'INTERNAL'
-                        ? t('workplaceInternalShort')
-                        : t('workplaceExternalShort')}
-                    </span>
-                  </div>
-                  <div className={styles.amount}>
-                    {formatCurrency(emp.monthlyAmount, locale)} {t('currency')}
-                  </div>
-                  <div className={styles.status}>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        emp.status === 'ACTIVE' ? styles.statusOk : styles.statusOff
-                      }`}
-                    >
-                      {emp.status === 'ACTIVE'
-                        ? t('statusActiveLabel')
-                        : t('statusInactiveLabel')}
-                    </span>
-                  </div>
+              </Link>
+              <div className={styles.body}>
+                <div className={styles.name}>{emp.fullName}</div>
+                <div className={styles.meta}>
+                  <span
+                    className={`${styles.wp} ${
+                      emp.workplace === 'INTERNAL' ? styles.wpIn : styles.wpOut
+                    }`}
+                  >
+                    {emp.workplace === 'INTERNAL'
+                      ? t('workplaceInternalShort')
+                      : t('workplaceExternalShort')}
+                  </span>
                 </div>
-              </Card>
-            </Link>
+                <div className={styles.amount}>
+                  {formatCurrency(emp.monthlyAmount, locale)} {t('currency')}
+                </div>
+                <div className={styles.status}>
+                  <span
+                    className={`${styles.statusBadge} ${
+                      emp.status === 'ACTIVE' ? styles.statusOk : styles.statusOff
+                    }`}
+                  >
+                    {emp.status === 'ACTIVE'
+                      ? t('statusActiveLabel')
+                      : t('statusInactiveLabel')}
+                  </span>
+                </div>
+              </div>
+            </Card>
           </li>
         ))}
       </ul>

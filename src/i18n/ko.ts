@@ -33,7 +33,7 @@ export const ko: Record<TranslationKey, string> = {
   employeesPageTitle: '직원',
   employeesStatus: '상태',
   employeesPageHint:
-    '모든 직원 목록이 여기에 표시됩니다. 이후 API와 연결할 수 있습니다.',
+    '사진을 누르면 직원 프로필과 식비 영수증으로 이동합니다. 이후 API와 연결할 수 있습니다.',
   receiptsPageTitle: '영수증',
   receiptsPageHint:
     '상단에서 월을 선택하면 해당 월 영수증만 표시됩니다. 각 블록에서 코드·매장·품목·결제 정보를 확인할 수 있습니다.',
@@ -74,6 +74,10 @@ export const ko: Record<TranslationKey, string> = {
   backToEmployees: '직원 목록으로',
   employeeNotFound: '직원을 찾을 수 없습니다',
   employeeDetailMonthly: '이번 달 배정 식비',
+  employeeReceiptsSectionTitle: '{{year}}년 — 식비 영수증',
+  employeeReceiptsLead: '월별 스캔 이미지와 합계입니다(데모 데이터).',
+  employeeReceiptsYearTotalsAria: '월 선택 · 버튼에 월별 합계 표시',
+  employeeReceiptsEmptyMonth: '해당 월 영수증이 없습니다.',
   statusActiveLabel: '재직',
   statusInactiveLabel: '비활성',
   reportsYearLabel: '{{year}}년',
