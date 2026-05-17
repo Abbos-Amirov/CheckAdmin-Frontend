@@ -34,7 +34,7 @@ export const uz = {
     'Bu sahifada barcha ishchilar ro‘yxati ko‘rinadi. Keyin API bilan bog‘laysiz.',
   receiptsPageTitle: 'Cheklar',
   receiptsPageHint:
-    'Har bir chek alohida blokda: kodi, do‘kon, xaridlar ro‘yxati va qaysi bank kartasi ishlatilgani ko‘rinadi.',
+    'Yuqoridagi oylardan birini tanlang — faqat shu oyga tegishli cheklar chiqadi. Har bir chek blokida kod, do‘kon, xaridlar va to‘lov ko‘rinadi.',
   reportsPageTitle: 'Hisobotlar',
   reportsPageHint:
     'Joriy yil uchun oy ustiga bosing — har bir xodim ovqat puli hisobotini topshirdi yoki topshirmaganligi ko‘rinadi.',
@@ -85,6 +85,8 @@ export const uz = {
   reportsSummaryCount: '{{submitted}} / {{total}} kishi topshirgan',
   reportsClearSelection: 'Oy tanlovini bekor qilish',
   receiptsGroupedTitle: '{{month}} — ishchilar bo‘yicha cheklar',
+  receiptsYearLabel: '{{year}} yil',
+  receiptsMonthPickerAria: 'Oy bo‘yicha filtrlash',
   receiptsChecksCount: '{{count}} ta chek',
   receiptsStatChecks: 'Cheklar soni',
   receiptsStatTotal: 'Umumiy summa',
@@ -92,6 +94,10 @@ export const uz = {
   receiptsDetailHeading: 'Cheklar tafsilotlari',
   receiptsThumbHint: 'Cheklarni chapga-surib ko‘ring — har birida to‘liq ma’lumot.',
   receiptsNoInMonth: 'Tanlangan oy uchun chek topilmadi.',
+  receiptDownloadPng: 'PNG',
+  receiptDownloadPdf: 'PDF',
+  receiptDownloadExcel: 'Excel',
+  receiptDownloadGroupAria: 'Chek skanini yuklab olish',
 } as const;
 
 export type TranslationKey = keyof typeof uz;

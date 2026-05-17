@@ -1,26 +1,28 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Locale } from '@/i18n';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { useReceipts } from '@/app/providers/ReceiptsProvider';
 import type { Receipt, ReceiptStatus } from '@/types/receipt.types';
-import { formatCurrency, formatDashboardMonth } from '@/utils/format';
+import { formatCalendarMonth, formatCurrency, formatDashboardMonth } from '@/utils/format';
 import { Card } from '@/components/common/Card';
 import { receiptScanImageUrl } from '@/data/receiptScanAssets';
+import {
+  downloadReceiptExcel,
+  downloadReceiptScanPdf,
+  downloadReceiptScanPng,
+  receiptExportBaseName,
+  type ReceiptExcelExportLabels,
+} from '@/utils/receiptExport';
 import styles from './ReceiptsPage.module.scss';
 
-/**
- * Mock ma’lumot barcha cheklarni 2026 mayga yozgan.
- * Keyin `new Date()` joriy oy yoki API filtri bilan almashtiring.
- */
-const RECEIPTS_FILTER_YEAR = 2026;
-const RECEIPTS_FILTER_MONTH = 5;
+/** Demo: cheklar asosan shu yilda (mock). Keyin API / tanlangan yil. */
+const RECEIPTS_PAGE_YEAR = 2026;
 
-function receiptInFilterMonth(iso: string): boolean {
+const MONTH_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+
+function receiptInYearMonth(iso: string, year: number, month: number): boolean {
   const d = new Date(iso);
-  return (
-    d.getUTCFullYear() === RECEIPTS_FILTER_YEAR &&
-    d.getUTCMonth() + 1 === RECEIPTS_FILTER_MONTH
-  );
+  return d.getUTCFullYear() === year && d.getUTCMonth() + 1 === month;
 }
 
 function totalReceiptAmount(list: Receipt[]): number {
@@ -36,10 +38,25 @@ type WorkerGroup = {
 export function ReceiptsPage() {
   const { t, locale } = useI18n();
   const { receipts } = useReceipts();
+  const [selectedMonth, setSelectedMonth] = useState(5);
+
+  const countsByMonth = useMemo(() => {
+    const arr = Array.from({ length: 12 }, () => 0);
+    for (const r of receipts) {
+      const d = new Date(r.createdAt);
+      if (d.getUTCFullYear() === RECEIPTS_PAGE_YEAR) {
+        arr[d.getUTCMonth()] += 1;
+      }
+    }
+    return arr;
+  }, [receipts]);
 
   const filtered = useMemo(
-    () => receipts.filter((r) => receiptInFilterMonth(r.createdAt)),
-    [receipts],
+    () =>
+      receipts.filter((r) =>
+        receiptInYearMonth(r.createdAt, RECEIPTS_PAGE_YEAR, selectedMonth),
+      ),
+    [receipts, selectedMonth],
   );
 
   const groups = useMemo(() => {
@@ -71,15 +88,43 @@ export function ReceiptsPage() {
     return { count: filtered.length, amount };
   }, [filtered]);
 
-  const periodLabelDate = new Date(
-    RECEIPTS_FILTER_YEAR,
-    RECEIPTS_FILTER_MONTH - 1,
-    1,
+  const periodLabelDate = useMemo(
+    () => new Date(RECEIPTS_PAGE_YEAR, selectedMonth - 1, 1),
+    [selectedMonth],
   );
 
   return (
     <div className={styles.page}>
       <p className={styles.lead}>{t('receiptsPageHint')}</p>
+
+      <div className={styles.monthToolbar}>
+        <p className={styles.yearLabel}>{t('receiptsYearLabel', { year: RECEIPTS_PAGE_YEAR })}</p>
+        <div className={styles.monthStrip} role="tablist" aria-label={t('receiptsMonthPickerAria')}>
+          {MONTH_INDEXES.map((m) => {
+            const count = countsByMonth[m - 1];
+            const active = selectedMonth === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`${styles.monthBtn} ${active ? styles.monthBtnActive : ''}`}
+                onClick={() => setSelectedMonth(m)}
+              >
+                <span className={styles.monthBtnLabel}>
+                  {formatCalendarMonth(m, locale, 'short')}
+                </span>
+                {count > 0 ? (
+                  <span className={styles.monthBtnBadge} aria-hidden>
+                    {count}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className={styles.periodBanner}>
         <h2 className={styles.periodTitle}>
@@ -166,10 +211,11 @@ function ReceiptDetailCard({
               alt=""
               className={styles.scanImg}
               width={240}
-              height={400}
+              height={350}
               loading="lazy"
             />
           </div>
+          <ReceiptScanDownloads receipt={receipt} />
         </div>
 
         <div className={styles.detail}>
@@ -263,6 +309,103 @@ function ReceiptDetailCard({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReceiptScanDownloads({ receipt }: { receipt: Receipt }) {
+  const { t, locale } = useI18n();
+  const [busy, setBusy] = useState<'png' | 'pdf' | 'xlsx' | null>(null);
+
+  const base = receiptExportBaseName(receipt);
+  const url = receiptScanImageUrl(receipt.id);
+
+  const statusDisplay =
+    receipt.status === 'PENDING'
+      ? t('statusPending')
+      : receipt.status === 'APPROVED'
+        ? t('statusApproved')
+        : t('statusRejected');
+
+  const excelLabels: ReceiptExcelExportLabels = {
+    sheetTitle: receipt.receiptCode,
+    itemsSectionTitle: t('receiptItemsTitle'),
+    paymentBlock: t('receiptPaymentTitle'),
+    store: t('receiptStore'),
+    receiptCode: t('receiptTransactionCode'),
+    internalId: t('receiptInternalId'),
+    employee: t('employees'),
+    date: t('receiptDate'),
+    status: t('employeesStatus'),
+    grandTotal: t('receiptGrandTotal'),
+    currencyLabel: t('currency'),
+    itemCode: t('receiptItemCode'),
+    itemName: t('receiptItemName'),
+    qty: t('receiptQty'),
+    unitPrice: t('receiptUnitPrice'),
+    lineTotal: t('receiptLineTotal'),
+    paymentMethod: t('receiptPaymentMethod'),
+    cardIssuer: t('receiptCardIssuer'),
+    cardNumber: t('receiptCardNumber'),
+    approvalNo: t('receiptApprovalNo'),
+  };
+
+  const formatMoney = (n: number) => formatCurrency(n, locale);
+  const formatDt = (iso: string) => formatDate(iso, locale);
+
+  const run = async (kind: 'png' | 'pdf' | 'xlsx', fn: () => void | Promise<void>) => {
+    setBusy(kind);
+    try {
+      await Promise.resolve(fn());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div
+      className={styles.scanDownloads}
+      role="group"
+      aria-label={t('receiptDownloadGroupAria')}
+      aria-busy={busy !== null}
+    >
+      <button
+        type="button"
+        className={styles.scanDlBtn}
+        disabled={busy !== null}
+        onClick={() => run('png', () => downloadReceiptScanPng(url, base))}
+      >
+        {busy === 'png' ? '…' : t('receiptDownloadPng')}
+      </button>
+      <button
+        type="button"
+        className={styles.scanDlBtn}
+        disabled={busy !== null}
+        onClick={() => run('pdf', () => downloadReceiptScanPdf(url, base))}
+      >
+        {busy === 'pdf' ? '…' : t('receiptDownloadPdf')}
+      </button>
+      <button
+        type="button"
+        className={styles.scanDlBtn}
+        disabled={busy !== null}
+        onClick={() =>
+          run('xlsx', () =>
+            downloadReceiptExcel(
+              receipt,
+              excelLabels,
+              formatMoney,
+              formatDt,
+              statusDisplay,
+              base,
+            ),
+          )
+        }
+      >
+        {busy === 'xlsx' ? '…' : t('receiptDownloadExcel')}
+      </button>
     </div>
   );
 }

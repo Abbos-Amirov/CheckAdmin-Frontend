@@ -36,7 +36,7 @@ export const ko: Record<TranslationKey, string> = {
     '모든 직원 목록이 여기에 표시됩니다. 이후 API와 연결할 수 있습니다.',
   receiptsPageTitle: '영수증',
   receiptsPageHint:
-    '각 영수증 블록에서 코드·매장·품목·결제 카드 정보를 확인할 수 있습니다.',
+    '상단에서 월을 선택하면 해당 월 영수증만 표시됩니다. 각 블록에서 코드·매장·품목·결제 정보를 확인할 수 있습니다.',
   reportsPageTitle: '보고서',
   reportsPageHint:
     '올해 월을 선택하면 직원별 식비 보고서 제출 여부를 볼 수 있습니다.',
@@ -87,6 +87,8 @@ export const ko: Record<TranslationKey, string> = {
   reportsSummaryCount: '제출 {{submitted}} / 전체 {{total}}명',
   reportsClearSelection: '월 선택 해제',
   receiptsGroupedTitle: '{{month}} — 직원별 영수증',
+  receiptsYearLabel: '{{year}}년',
+  receiptsMonthPickerAria: '월별로 필터',
   receiptsChecksCount: '영수증 {{count}}건',
   receiptsStatChecks: '영수증 건수',
   receiptsStatTotal: '총 금액',
@@ -94,4 +96,8 @@ export const ko: Record<TranslationKey, string> = {
   receiptsDetailHeading: '영수증 상세',
   receiptsThumbHint: '가로로 스크롤하여 각 영수증 상세를 확인하세요.',
   receiptsNoInMonth: '해당 월 영수증이 없습니다.',
+  receiptDownloadPng: 'PNG',
+  receiptDownloadPdf: 'PDF',
+  receiptDownloadExcel: 'Excel',
+  receiptDownloadGroupAria: '영수증 스캔 다운로드',
 };
