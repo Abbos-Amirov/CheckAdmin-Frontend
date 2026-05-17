@@ -1,0 +1,37 @@
+// Theme tokens — consumed via globals.scss body[data-theme]
+
+:root[data-theme='light'] {
+  --color-bg: #f9f9f7;
+  --color-bg-elevated: #ffffff;
+  --color-sidebar: #f1f1ee;
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-text: #333333;
+  --color-text-muted: #888888;
+  --color-accent: #c67c4e;
+  --color-success: #2d9d5f;
+  --color-warning: #d4894a;
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0f1115;
+  --color-bg-elevated: #1a1f27;
+  --color-sidebar: #141820;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-text: #e8eaef;
+  --color-text-muted: #9aa3b2;
+  --color-accent: #e4a574;
+  --color-success: #4ade80;
+  --color-warning: #fbbf77;
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+}

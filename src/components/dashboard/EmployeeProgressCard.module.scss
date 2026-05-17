@@ -1,0 +1,72 @@
+@use '../../styles/variables.scss' as v;
+
+.card {
+  padding: 22px 22px 20px;
+}
+
+.head {
+  margin-bottom: 18px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.amount {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+
+  [data-theme='dark'] & {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.bar {
+  height: 100%;
+  border-radius: inherit;
+  transition: width v.$transition-normal;
+}
+
+.barOk {
+  background: linear-gradient(90deg, #2d9d5f, #4ade80);
+}
+
+.barMid {
+  background: linear-gradient(90deg, #c67c4e, #eab872);
+}
+
+.barWarn {
+  background: linear-gradient(90deg, #d4894a, #fbbf77);
+}

@@ -1,0 +1,23 @@
+$transition-fast: 150ms ease;
+$transition-normal: 220ms ease;
+$sidebar-width: 260px;
+$header-height: 72px;
+$mobile-breakpoint: 900px;
+
+@mixin hover-lift {
+  transition:
+    transform $transition-normal,
+    box-shadow $transition-normal;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}

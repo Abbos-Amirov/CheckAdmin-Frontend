@@ -1,0 +1,74 @@
+@use '../../styles/variables.scss' as v;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background-color v.$transition-normal,
+    color v.$transition-normal,
+    border-color v.$transition-normal,
+    transform v.$transition-fast,
+    box-shadow v.$transition-fast;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  &:not(:disabled):active {
+    transform: scale(0.98);
+  }
+
+  @include v.focus-ring;
+}
+
+.primary {
+  background: var(--color-text);
+  color: var(--color-bg);
+
+  [data-theme='dark'] & {
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  &:not(:disabled):hover {
+    box-shadow: var(--shadow-hover);
+  }
+}
+
+.outline {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+
+  &:not(:disabled):hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+
+  &:not(:disabled):hover {
+    color: var(--color-text);
+    background: rgba(0, 0, 0, 0.04);
+
+    [data-theme='dark'] & {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+}

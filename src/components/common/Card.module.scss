@@ -1,0 +1,13 @@
+@use '../../styles/variables.scss' as v;
+
+.card {
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  transition:
+    box-shadow v.$transition-normal,
+    transform v.$transition-normal;
+
+  @include v.hover-lift;
+}

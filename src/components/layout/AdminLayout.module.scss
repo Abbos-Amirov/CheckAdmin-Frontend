@@ -1,0 +1,96 @@
+@use '../../styles/variables.scss' as v;
+
+.shell {
+  display: flex;
+  min-height: 100%;
+  position: relative;
+}
+
+.sidebarWrap {
+  width: v.$sidebar-width;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  z-index: 20;
+  transition: transform v.$transition-normal;
+
+  @media (max-width: v.$mobile-breakpoint) {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    transform: translateX(-105%);
+    box-shadow: none;
+
+    &.sidebarOpen {
+      transform: translateX(0);
+      box-shadow: 16px 0 40px rgba(0, 0, 0, 0.18);
+    }
+  }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 28px 40px;
+
+  @media (max-width: v.$mobile-breakpoint) {
+    padding: 72px 18px 32px;
+    width: 100%;
+  }
+}
+
+.burger {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 25;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text);
+
+  @media (max-width: v.$mobile-breakpoint) {
+    display: inline-flex;
+  }
+
+  @include v.focus-ring;
+}
+
+.burgerIcon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.burgerText {
+  @media (max-width: 420px) {
+    display: none;
+  }
+}
+
+.backdrop {
+  display: none;
+
+  @media (max-width: v.$mobile-breakpoint) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+  }
+}
