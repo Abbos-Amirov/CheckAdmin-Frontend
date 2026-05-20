@@ -113,7 +113,7 @@ export function ReceiptsMonthDownloadBar({
 
   return (
     <div
-      className={`${styles.bar} ${isWorker ? styles.barWorker : ''} ${className}`.trim()}
+      className={`${styles.bar} ${isWorker ? styles.barWorker : styles.barPage} ${className}`.trim()}
       role="group"
       aria-label={ariaLabel}
       aria-busy={busy !== null}

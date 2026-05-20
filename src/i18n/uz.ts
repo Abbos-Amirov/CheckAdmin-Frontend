@@ -127,6 +127,7 @@ export const uz = {
   reportsClearSelection: 'Oy tanlovini bekor qilish',
   receiptsGroupedTitle: '{{month}} — ishchilar bo‘yicha cheklar',
   receiptsYearLabel: '{{year}} yil',
+  receiptsYearPickerAria: 'Yilni tanlash',
   receiptsMonthPickerAria: 'Oy bo‘yicha filtrlash',
   receiptsChecksCount: '{{count}} ta chek',
   receiptsStatChecks: 'Cheklar soni',
@@ -146,6 +147,9 @@ export const uz = {
   receiptExcelGrandTotal: 'Umumiy summa',
   receiptsMonthBulkDownloadsAria:
     'Tanlangan oy uchun barcha cheklarni PNG, PDF va Excel formatida yuklab olish',
+  receiptsAllEmployeesDownloadTitle: 'Barcha ishchilar — umumiy yuklab olish',
+  receiptsAllEmployeesDownloadHint:
+    'Tanlangan oydagi barcha ishchilarning cheklarini bir vaqtning o‘zida Excel, PDF yoki PNG formatida yuklab oling.',
   receiptsWorkerDownloadsAria: '{{name}} — cheklarni PNG, PDF va Excel formatida yuklab olish',
   employeeReceiptsBulkDownloadsAria:
     'Tanlangan oy uchun barcha chek skanlari va ma’lumotlarini yuklab olish',

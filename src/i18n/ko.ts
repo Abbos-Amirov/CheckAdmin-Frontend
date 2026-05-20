@@ -128,6 +128,7 @@ export const ko: Record<TranslationKey, string> = {
   reportsClearSelection: '월 선택 해제',
   receiptsGroupedTitle: '{{month}} — 직원별 영수증',
   receiptsYearLabel: '{{year}}년',
+  receiptsYearPickerAria: '연도 선택',
   receiptsMonthPickerAria: '월별로 필터',
   receiptsChecksCount: '영수증 {{count}}건',
   receiptsStatChecks: '영수증 건수',
@@ -147,6 +148,9 @@ export const ko: Record<TranslationKey, string> = {
   receiptExcelGrandTotal: '총 금액',
   receiptsMonthBulkDownloadsAria:
     '선택한 월의 모든 영수증을 PNG, PDF, Excel로 다운로드',
+  receiptsAllEmployeesDownloadTitle: '전체 직원 — 일괄 다운로드',
+  receiptsAllEmployeesDownloadHint:
+    '선택한 월의 모든 직원 영수증을 Excel, PDF, PNG로 한 번에 다운로드합니다.',
   receiptsWorkerDownloadsAria: '{{name}} — 영수증 PNG, PDF, Excel 다운로드',
   employeeReceiptsBulkDownloadsAria: '선택한 월의 모든 영수증 스캔·데이터 다운로드',
 };

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Locale } from '@/i18n';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { useReceipts } from '@/app/providers/ReceiptsProvider';
@@ -9,8 +9,14 @@ import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDow
 import { receiptScanImageUrl } from '@/data/receiptScanAssets';
 import styles from './ReceiptsPage.module.scss';
 
-/** Demo: cheklar asosan shu yilda (mock). Keyin API / tanlangan yil. */
-const RECEIPTS_PAGE_YEAR = 2026;
+/** Demo: yil oralig‘i. Tanlangan yil bo‘yicha oylar filtrlashadi. */
+const RECEIPTS_DEFAULT_YEAR = 2026;
+const RECEIPTS_YEAR_END = 2036;
+
+const RECEIPTS_YEARS = Array.from(
+  { length: RECEIPTS_YEAR_END - RECEIPTS_DEFAULT_YEAR + 1 },
+  (_, i) => RECEIPTS_DEFAULT_YEAR + i,
+);
 
 const MONTH_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
@@ -32,25 +38,39 @@ type WorkerGroup = {
 export function ReceiptsPage() {
   const { t, locale } = useI18n();
   const { receipts } = useReceipts();
+  const [selectedYear, setSelectedYear] = useState(RECEIPTS_DEFAULT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState(5);
+  const [yearMenuOpen, setYearMenuOpen] = useState(false);
+  const yearPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!yearMenuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (yearPickerRef.current && !yearPickerRef.current.contains(e.target as Node)) {
+        setYearMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [yearMenuOpen]);
 
   const countsByMonth = useMemo(() => {
     const arr = Array.from({ length: 12 }, () => 0);
     for (const r of receipts) {
       const d = new Date(r.createdAt);
-      if (d.getUTCFullYear() === RECEIPTS_PAGE_YEAR) {
+      if (d.getUTCFullYear() === selectedYear) {
         arr[d.getUTCMonth()] += 1;
       }
     }
     return arr;
-  }, [receipts]);
+  }, [receipts, selectedYear]);
 
   const filtered = useMemo(
     () =>
       receipts.filter((r) =>
-        receiptInYearMonth(r.createdAt, RECEIPTS_PAGE_YEAR, selectedMonth),
+        receiptInYearMonth(r.createdAt, selectedYear, selectedMonth),
       ),
-    [receipts, selectedMonth],
+    [receipts, selectedYear, selectedMonth],
   );
 
   const groups = useMemo(() => {
@@ -83,16 +103,62 @@ export function ReceiptsPage() {
   }, [filtered]);
 
   const periodLabelDate = useMemo(
-    () => new Date(RECEIPTS_PAGE_YEAR, selectedMonth - 1, 1),
-    [selectedMonth],
+    () => new Date(selectedYear, selectedMonth - 1, 1),
+    [selectedYear, selectedMonth],
   );
+
+  const handleYearPick = (year: number) => {
+    setSelectedYear(year);
+    setYearMenuOpen(false);
+  };
 
   return (
     <div className={styles.page}>
       <p className={styles.lead}>{t('receiptsPageHint')}</p>
 
       <div className={styles.monthToolbar}>
-        <p className={styles.yearLabel}>{t('receiptsYearLabel', { year: RECEIPTS_PAGE_YEAR })}</p>
+        <div className={styles.yearPickerWrap} ref={yearPickerRef}>
+          <button
+            type="button"
+            className={`${styles.yearPickerBtn} ${yearMenuOpen ? styles.yearPickerBtnOpen : ''}`.trim()}
+            aria-expanded={yearMenuOpen}
+            aria-haspopup="listbox"
+            aria-label={t('receiptsYearPickerAria')}
+            onClick={() => setYearMenuOpen((open) => !open)}
+          >
+            <span className={styles.yearPickerLabel}>
+              {t('receiptsYearLabel', { year: selectedYear })}
+            </span>
+            <span className={styles.yearPickerChevron} aria-hidden>
+              {yearMenuOpen ? '▴' : '▾'}
+            </span>
+          </button>
+
+          {yearMenuOpen ? (
+            <div
+              className={styles.yearMenu}
+              role="listbox"
+              aria-label={t('receiptsYearPickerAria')}
+            >
+              {RECEIPTS_YEARS.map((year) => {
+                const active = year === selectedYear;
+                return (
+                  <button
+                    key={year}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    className={`${styles.yearOption} ${active ? styles.yearOptionActive : ''}`.trim()}
+                    onClick={() => handleYearPick(year)}
+                  >
+                    {t('receiptsYearLabel', { year })}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+
         <div className={styles.monthStrip} role="tablist" aria-label={t('receiptsMonthPickerAria')}>
           {MONTH_INDEXES.map((m) => {
             const count = countsByMonth[m - 1];
@@ -144,11 +210,20 @@ export function ReceiptsPage() {
               <span className={styles.overviewCaption}>{t('receiptsStatTotal')}</span>
             </div>
           </div>
-          <ReceiptsMonthDownloadBar
-            receipts={filtered}
-            year={RECEIPTS_PAGE_YEAR}
-            month={selectedMonth}
-          />
+
+          <Card className={styles.allDownloadsCard}>
+            <h3 className={styles.allDownloadsTitle}>
+              {t('receiptsAllEmployeesDownloadTitle')}
+            </h3>
+            <p className={styles.allDownloadsHint}>{t('receiptsAllEmployeesDownloadHint')}</p>
+            <ReceiptsMonthDownloadBar
+              receipts={filtered}
+              year={selectedYear}
+              month={selectedMonth}
+              variant="page"
+              className={styles.allDownloadsBar}
+            />
+          </Card>
         </>
       ) : null}
 
@@ -177,14 +252,6 @@ export function ReceiptsPage() {
                   </div>
                 </div>
               </div>
-              <ReceiptsMonthDownloadBar
-                receipts={g.receipts}
-                year={RECEIPTS_PAGE_YEAR}
-                month={selectedMonth}
-                singleEmployeeName={g.employeeName}
-                variant="worker"
-                className={styles.workerDownloads}
-              />
               <div className={styles.horizontalStrip} role="list">
                 {g.receipts.map((r) => (
                   <div key={r.id} className={styles.stripItem} role="listitem">
@@ -192,6 +259,14 @@ export function ReceiptsPage() {
                   </div>
                 ))}
               </div>
+              <ReceiptsMonthDownloadBar
+                receipts={g.receipts}
+                year={selectedYear}
+                month={selectedMonth}
+                singleEmployeeName={g.employeeName}
+                variant="worker"
+                className={styles.workerDownloads}
+              />
             </Card>
           ))}
         </div>

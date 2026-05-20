@@ -24,6 +24,26 @@
   }
 }
 
+.barPage {
+  width: 100%;
+  flex-wrap: nowrap;
+
+  .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    min-height: 44px;
+  }
+
+  @media (max-width: 520px) {
+    flex-wrap: wrap;
+
+    .btn {
+      flex: 1 1 100%;
+    }
+  }
+}
+
 .btn {
   flex: 1 1 auto;
   min-width: 7.5rem;
@@ -56,33 +76,14 @@
   }
 }
 
-.btnExcel {
-  border: 1px solid rgba(45, 157, 95, 0.55);
-  background: rgba(45, 157, 95, 0.92);
-  color: #fff;
-
-  [data-theme='dark'] & {
-    border-color: rgba(74, 222, 128, 0.5);
-    background: rgba(45, 157, 95, 0.85);
-    color: #f0fdf4;
-  }
-
-  &:hover:not(:disabled) {
-    background: rgba(45, 157, 95, 1);
-    box-shadow: 0 8px 20px rgba(45, 157, 95, 0.35);
-
-    [data-theme='dark'] & {
-      box-shadow: 0 8px 24px rgba(74, 222, 128, 0.25);
-    }
-  }
-}
-
 .barWorker {
   margin-top: 0;
   padding: 12px 14px;
   gap: 8px;
+  justify-content: center;
 
   .btn {
+    flex: 1 1 auto;
     min-width: 5.5rem;
     max-width: none;
     padding: 9px 12px;
@@ -92,6 +93,7 @@
   }
 }
 
+.btnExcel,
 .btnPdf,
 .btnPng {
   border: 1px solid rgba(45, 157, 95, 0.45);
