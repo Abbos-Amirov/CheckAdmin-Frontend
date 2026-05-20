@@ -4,6 +4,10 @@
   gap: 24px;
 }
 
+.monthToolbar {
+  margin-top: 0;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

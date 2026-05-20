@@ -1,29 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Locale } from '@/i18n';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { useReceipts } from '@/app/providers/ReceiptsProvider';
 import type { Receipt, ReceiptStatus } from '@/types/receipt.types';
-import { formatCalendarMonth, formatCurrency, formatDashboardMonth } from '@/utils/format';
+import { formatCurrency, formatDashboardMonth } from '@/utils/format';
 import { Card } from '@/components/common/Card';
+import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
 import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDownloadBar';
 import { receiptScanImageUrl } from '@/data/receiptScanAssets';
+import {
+  DEMO_CALENDAR_DEFAULT_YEAR,
+  DEMO_RECEIPTS_MONTH,
+  receiptInYearMonth,
+} from '@/utils/receiptMonthFilter';
 import styles from './ReceiptsPage.module.scss';
-
-/** Demo: yil oralig‘i. Tanlangan yil bo‘yicha oylar filtrlashadi. */
-const RECEIPTS_DEFAULT_YEAR = 2026;
-const RECEIPTS_YEAR_END = 2036;
-
-const RECEIPTS_YEARS = Array.from(
-  { length: RECEIPTS_YEAR_END - RECEIPTS_DEFAULT_YEAR + 1 },
-  (_, i) => RECEIPTS_DEFAULT_YEAR + i,
-);
-
-const MONTH_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
-
-function receiptInYearMonth(iso: string, year: number, month: number): boolean {
-  const d = new Date(iso);
-  return d.getUTCFullYear() === year && d.getUTCMonth() + 1 === month;
-}
 
 function totalReceiptAmount(list: Receipt[]): number {
   return list.reduce((sum, r) => sum + r.amount, 0);
@@ -38,21 +28,8 @@ type WorkerGroup = {
 export function ReceiptsPage() {
   const { t, locale } = useI18n();
   const { receipts } = useReceipts();
-  const [selectedYear, setSelectedYear] = useState(RECEIPTS_DEFAULT_YEAR);
-  const [selectedMonth, setSelectedMonth] = useState(5);
-  const [yearMenuOpen, setYearMenuOpen] = useState(false);
-  const yearPickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!yearMenuOpen) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (yearPickerRef.current && !yearPickerRef.current.contains(e.target as Node)) {
-        setYearMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [yearMenuOpen]);
+  const [selectedYear, setSelectedYear] = useState(DEMO_CALENDAR_DEFAULT_YEAR);
+  const [selectedMonth, setSelectedMonth] = useState(DEMO_RECEIPTS_MONTH);
 
   const countsByMonth = useMemo(() => {
     const arr = Array.from({ length: 12 }, () => 0);
@@ -107,84 +84,18 @@ export function ReceiptsPage() {
     [selectedYear, selectedMonth],
   );
 
-  const handleYearPick = (year: number) => {
-    setSelectedYear(year);
-    setYearMenuOpen(false);
-  };
-
   return (
     <div className={styles.page}>
       <p className={styles.lead}>{t('receiptsPageHint')}</p>
 
-      <div className={styles.monthToolbar}>
-        <div className={styles.yearPickerWrap} ref={yearPickerRef}>
-          <button
-            type="button"
-            className={`${styles.yearPickerBtn} ${yearMenuOpen ? styles.yearPickerBtnOpen : ''}`.trim()}
-            aria-expanded={yearMenuOpen}
-            aria-haspopup="listbox"
-            aria-label={t('receiptsYearPickerAria')}
-            onClick={() => setYearMenuOpen((open) => !open)}
-          >
-            <span className={styles.yearPickerLabel}>
-              {t('receiptsYearLabel', { year: selectedYear })}
-            </span>
-            <span className={styles.yearPickerChevron} aria-hidden>
-              {yearMenuOpen ? '▴' : '▾'}
-            </span>
-          </button>
-
-          {yearMenuOpen ? (
-            <div
-              className={styles.yearMenu}
-              role="listbox"
-              aria-label={t('receiptsYearPickerAria')}
-            >
-              {RECEIPTS_YEARS.map((year) => {
-                const active = year === selectedYear;
-                return (
-                  <button
-                    key={year}
-                    type="button"
-                    role="option"
-                    aria-selected={active}
-                    className={`${styles.yearOption} ${active ? styles.yearOptionActive : ''}`.trim()}
-                    onClick={() => handleYearPick(year)}
-                  >
-                    {t('receiptsYearLabel', { year })}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-
-        <div className={styles.monthStrip} role="tablist" aria-label={t('receiptsMonthPickerAria')}>
-          {MONTH_INDEXES.map((m) => {
-            const count = countsByMonth[m - 1];
-            const active = selectedMonth === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                className={`${styles.monthBtn} ${active ? styles.monthBtnActive : ''}`}
-                onClick={() => setSelectedMonth(m)}
-              >
-                <span className={styles.monthBtnLabel}>
-                  {formatCalendarMonth(m, locale, 'short')}
-                </span>
-                {count > 0 ? (
-                  <span className={styles.monthBtnBadge} aria-hidden>
-                    {count}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <YearMonthToolbar
+        className={styles.monthToolbar}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        onYearChange={setSelectedYear}
+        onMonthChange={setSelectedMonth}
+        countsByMonth={countsByMonth}
+      />
 
       <div className={styles.periodBanner}>
         <h2 className={styles.periodTitle}>

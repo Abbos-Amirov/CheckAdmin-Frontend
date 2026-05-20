@@ -3,7 +3,7 @@ import { useI18n } from '@/app/providers/I18nProvider';
 import { mockEmployees } from '@/data/mockDashboard';
 import type { Receipt } from '@/types/receipt.types';
 import type { WorkplaceType } from '@/types/employee.types';
-import { receiptInDemoMonth } from '@/utils/receiptMonthFilter';
+import { receiptInYearMonth } from '@/utils/receiptMonthFilter';
 import { formatCurrency } from '@/utils/format';
 import { Card } from '@/components/common/Card';
 import { ReceiptItem } from '@/components/dashboard/ReceiptItem';
@@ -11,18 +11,30 @@ import styles from './PendingReceiptsCard.module.scss';
 
 type Props = {
   receipts: Receipt[];
+  year: number;
+  month: number;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
 };
 
-function employeeMonthReceiptsTotal(allReceipts: Receipt[], employeeId: string): number {
+function employeeMonthReceiptsTotal(
+  allReceipts: Receipt[],
+  employeeId: string,
+  year: number,
+  month: number,
+): number {
   return allReceipts
-    .filter((r) => r.employeeId === employeeId && receiptInDemoMonth(r.createdAt))
+    .filter(
+      (r) =>
+        r.employeeId === employeeId && receiptInYearMonth(r.createdAt, year, month),
+    )
     .reduce((sum, r) => sum + r.amount, 0);
 }
 
 export function PendingReceiptsCard({
   receipts,
+  year,
+  month,
   onApprove,
   onReject,
 }: Props) {
@@ -39,7 +51,10 @@ export function PendingReceiptsCard({
     return { byId: map, internalBudget: internal, externalBudget: external };
   }, []);
 
-  const pending = receipts.filter((r) => r.status === 'PENDING');
+  const pending = receipts.filter(
+    (r) =>
+      r.status === 'PENDING' && receiptInYearMonth(r.createdAt, year, month),
+  );
 
   const { internalList, externalList } = useMemo(() => {
     const internal: Receipt[] = [];
@@ -73,7 +88,12 @@ export function PendingReceiptsCard({
             const emp = byId.get(receipt.employeeId);
             const monthlyAllocation = emp?.monthlyAmount ?? 0;
             const workplace = emp?.workplace ?? 'EXTERNAL';
-            const monthReceiptsTotal = employeeMonthReceiptsTotal(receipts, receipt.employeeId);
+            const monthReceiptsTotal = employeeMonthReceiptsTotal(
+              receipts,
+              receipt.employeeId,
+              year,
+              month,
+            );
             const photoUrl = emp?.photoUrl ?? '';
             const initial = receipt.employeeName.trim().charAt(0).toUpperCase() || '?';
 
