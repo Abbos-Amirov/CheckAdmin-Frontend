@@ -139,6 +139,15 @@ export const uz = {
   receiptDownloadPdf: 'PDF',
   receiptDownloadExcel: 'Excel',
   receiptDownloadGroupAria: 'Chek skanini yuklab olish',
+  receiptExcelDownload: 'Excel yuklab olish',
+  receiptExcelColNo: 'No',
+  receiptExcelColEmployee: 'Xodim ismi',
+  receiptExcelColAmount: 'Summa',
+  receiptExcelGrandTotal: 'Umumiy summa',
+  receiptsMonthBulkDownloadsAria:
+    'Tanlangan oy uchun barcha cheklarni PNG, PDF va Excel formatida yuklab olish',
+  employeeReceiptsBulkDownloadsAria:
+    'Tanlangan oy uchun barcha chek skanlari va ma’lumotlarini yuklab olish',
 } as const;
 
 export type TranslationKey = keyof typeof uz;

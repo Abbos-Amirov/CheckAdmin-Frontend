@@ -14,6 +14,12 @@ export const RECEIPT_SCAN_FILES = [
   'r6.png',
   'r7.png',
   'r8.png',
+  'r9.png',
+  'r10.png',
+  'r11.png',
+  'r12.png',
+  'r13.png',
+  'r14.png',
 ] as const;
 
 export function receiptScanImageUrl(receiptId: string): string {

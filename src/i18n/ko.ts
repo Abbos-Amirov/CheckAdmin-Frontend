@@ -140,4 +140,12 @@ export const ko: Record<TranslationKey, string> = {
   receiptDownloadPdf: 'PDF',
   receiptDownloadExcel: 'Excel',
   receiptDownloadGroupAria: '영수증 스캔 다운로드',
+  receiptExcelDownload: '엑셀 다운로드',
+  receiptExcelColNo: '번호',
+  receiptExcelColEmployee: '직원 이름',
+  receiptExcelColAmount: '금액',
+  receiptExcelGrandTotal: '총 금액',
+  receiptsMonthBulkDownloadsAria:
+    '선택한 월의 모든 영수증을 PNG, PDF, Excel로 다운로드',
+  employeeReceiptsBulkDownloadsAria: '선택한 월의 모든 영수증 스캔·데이터 다운로드',
 };

@@ -5,14 +5,8 @@ import { useReceipts } from '@/app/providers/ReceiptsProvider';
 import type { Receipt, ReceiptStatus } from '@/types/receipt.types';
 import { formatCalendarMonth, formatCurrency, formatDashboardMonth } from '@/utils/format';
 import { Card } from '@/components/common/Card';
+import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDownloadBar';
 import { receiptScanImageUrl } from '@/data/receiptScanAssets';
-import {
-  downloadReceiptExcel,
-  downloadReceiptScanPdf,
-  downloadReceiptScanPng,
-  receiptExportBaseName,
-  type ReceiptExcelExportLabels,
-} from '@/utils/receiptExport';
 import styles from './ReceiptsPage.module.scss';
 
 /** Demo: cheklar asosan shu yilda (mock). Keyin API / tanlangan yil. */
@@ -136,19 +130,26 @@ export function ReceiptsPage() {
       </div>
 
       {groups.length > 0 ? (
-        <div className={styles.overviewBar} aria-label={t('receiptsMonthOverviewHint')}>
-          <div className={styles.overviewBlock}>
-            <span className={styles.overviewBig}>{monthTotals.count}</span>
-            <span className={styles.overviewCaption}>{t('receiptsStatChecks')}</span>
+        <>
+          <div className={styles.overviewBar} aria-label={t('receiptsMonthOverviewHint')}>
+            <div className={styles.overviewBlock}>
+              <span className={styles.overviewBig}>{monthTotals.count}</span>
+              <span className={styles.overviewCaption}>{t('receiptsStatChecks')}</span>
+            </div>
+            <div className={styles.overviewBlock}>
+              <span className={styles.overviewBig}>
+                {formatCurrency(monthTotals.amount, locale)}{' '}
+                <span className={styles.overviewCurrency}>{t('currency')}</span>
+              </span>
+              <span className={styles.overviewCaption}>{t('receiptsStatTotal')}</span>
+            </div>
           </div>
-          <div className={styles.overviewBlock}>
-            <span className={styles.overviewBig}>
-              {formatCurrency(monthTotals.amount, locale)}{' '}
-              <span className={styles.overviewCurrency}>{t('currency')}</span>
-            </span>
-            <span className={styles.overviewCaption}>{t('receiptsStatTotal')}</span>
-          </div>
-        </div>
+          <ReceiptsMonthDownloadBar
+            receipts={filtered}
+            year={RECEIPTS_PAGE_YEAR}
+            month={selectedMonth}
+          />
+        </>
       ) : null}
 
       {groups.length === 0 ? (
@@ -215,7 +216,6 @@ function ReceiptDetailCard({
               loading="lazy"
             />
           </div>
-          <ReceiptScanDownloads receipt={receipt} />
         </div>
 
         <div className={styles.detail}>
@@ -309,103 +309,6 @@ function ReceiptDetailCard({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ReceiptScanDownloads({ receipt }: { receipt: Receipt }) {
-  const { t, locale } = useI18n();
-  const [busy, setBusy] = useState<'png' | 'pdf' | 'xlsx' | null>(null);
-
-  const base = receiptExportBaseName(receipt);
-  const url = receiptScanImageUrl(receipt.id);
-
-  const statusDisplay =
-    receipt.status === 'PENDING'
-      ? t('statusPending')
-      : receipt.status === 'APPROVED'
-        ? t('statusApproved')
-        : t('statusRejected');
-
-  const excelLabels: ReceiptExcelExportLabels = {
-    sheetTitle: receipt.receiptCode,
-    itemsSectionTitle: t('receiptItemsTitle'),
-    paymentBlock: t('receiptPaymentTitle'),
-    store: t('receiptStore'),
-    receiptCode: t('receiptTransactionCode'),
-    internalId: t('receiptInternalId'),
-    employee: t('employees'),
-    date: t('receiptDate'),
-    status: t('employeesStatus'),
-    grandTotal: t('receiptGrandTotal'),
-    currencyLabel: t('currency'),
-    itemCode: t('receiptItemCode'),
-    itemName: t('receiptItemName'),
-    qty: t('receiptQty'),
-    unitPrice: t('receiptUnitPrice'),
-    lineTotal: t('receiptLineTotal'),
-    paymentMethod: t('receiptPaymentMethod'),
-    cardIssuer: t('receiptCardIssuer'),
-    cardNumber: t('receiptCardNumber'),
-    approvalNo: t('receiptApprovalNo'),
-  };
-
-  const formatMoney = (n: number) => formatCurrency(n, locale);
-  const formatDt = (iso: string) => formatDate(iso, locale);
-
-  const run = async (kind: 'png' | 'pdf' | 'xlsx', fn: () => void | Promise<void>) => {
-    setBusy(kind);
-    try {
-      await Promise.resolve(fn());
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  return (
-    <div
-      className={styles.scanDownloads}
-      role="group"
-      aria-label={t('receiptDownloadGroupAria')}
-      aria-busy={busy !== null}
-    >
-      <button
-        type="button"
-        className={styles.scanDlBtn}
-        disabled={busy !== null}
-        onClick={() => run('png', () => downloadReceiptScanPng(url, base))}
-      >
-        {busy === 'png' ? '…' : t('receiptDownloadPng')}
-      </button>
-      <button
-        type="button"
-        className={styles.scanDlBtn}
-        disabled={busy !== null}
-        onClick={() => run('pdf', () => downloadReceiptScanPdf(url, base))}
-      >
-        {busy === 'pdf' ? '…' : t('receiptDownloadPdf')}
-      </button>
-      <button
-        type="button"
-        className={styles.scanDlBtn}
-        disabled={busy !== null}
-        onClick={() =>
-          run('xlsx', () =>
-            downloadReceiptExcel(
-              receipt,
-              excelLabels,
-              formatMoney,
-              formatDt,
-              statusDisplay,
-              base,
-            ),
-          )
-        }
-      >
-        {busy === 'xlsx' ? '…' : t('receiptDownloadExcel')}
-      </button>
     </div>
   );
 }

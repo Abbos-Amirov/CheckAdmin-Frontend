@@ -1,0 +1,99 @@
+@use '../../styles/variables.scss' as v;
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(45, 157, 95, 0.35);
+  background: linear-gradient(
+    135deg,
+    rgba(45, 157, 95, 0.1),
+    rgba(45, 157, 95, 0.03)
+  );
+
+  [data-theme='dark'] & {
+    border-color: rgba(74, 222, 128, 0.35);
+    background: linear-gradient(
+      135deg,
+      rgba(74, 222, 128, 0.12),
+      rgba(74, 222, 128, 0.04)
+    );
+  }
+}
+
+.btn {
+  flex: 1 1 auto;
+  min-width: 7.5rem;
+  max-width: 14rem;
+  padding: 11px 18px;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    transform v.$transition-normal,
+    box-shadow v.$transition-normal,
+    background-color v.$transition-fast,
+    border-color v.$transition-fast;
+
+  @include v.hover-lift;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-success);
+    outline-offset: 2px;
+  }
+}
+
+.btnExcel {
+  border: 1px solid rgba(45, 157, 95, 0.55);
+  background: rgba(45, 157, 95, 0.92);
+  color: #fff;
+
+  [data-theme='dark'] & {
+    border-color: rgba(74, 222, 128, 0.5);
+    background: rgba(45, 157, 95, 0.85);
+    color: #f0fdf4;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(45, 157, 95, 1);
+    box-shadow: 0 8px 20px rgba(45, 157, 95, 0.35);
+
+    [data-theme='dark'] & {
+      box-shadow: 0 8px 24px rgba(74, 222, 128, 0.25);
+    }
+  }
+}
+
+.btnPdf,
+.btnPng {
+  border: 1px solid rgba(45, 157, 95, 0.45);
+  background: var(--color-bg-elevated);
+  color: var(--color-success);
+
+  [data-theme='dark'] & {
+    border-color: rgba(74, 222, 128, 0.4);
+    color: var(--color-success);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-success);
+    background: rgba(45, 157, 95, 0.1);
+
+    [data-theme='dark'] & {
+      background: rgba(74, 222, 128, 0.12);
+    }
+  }
+}

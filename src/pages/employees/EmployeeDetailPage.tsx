@@ -5,6 +5,7 @@ import { useI18n } from '@/app/providers/I18nProvider';
 import { useReceipts } from '@/app/providers/ReceiptsProvider';
 import { formatCalendarMonth, formatCurrency, formatDashboardMonth } from '@/utils/format';
 import { receiptScanImageUrl } from '@/data/receiptScanAssets';
+import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDownloadBar';
 import { Card } from '@/components/common/Card';
 import styles from './EmployeeDetailPage.module.scss';
 
@@ -192,26 +193,34 @@ export function EmployeeDetailPage() {
         {displayedReceipts.length === 0 ? (
           <p className={styles.emptyMonth}>{t('employeeReceiptsEmptyMonth')}</p>
         ) : (
-          <ul className={styles.scanGallery} role="list">
-            {displayedReceipts.map((r) => (
-              <li key={r.id} className={styles.scanThumb} role="listitem">
-                <div className={styles.scanThumbFrame}>
-                  <img
-                    src={receiptScanImageUrl(r.id)}
-                    alt=""
-                    className={styles.scanThumbImg}
-                    width={160}
-                    height={280}
-                    loading="lazy"
-                  />
-                </div>
-                <span className={styles.scanThumbCap}>{r.receiptCode}</span>
-                <span className={styles.scanThumbAmt}>
-                  {formatCurrency(r.amount, locale)} {t('currency')}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className={styles.scanGallery} role="list">
+              {displayedReceipts.map((r) => (
+                <li key={r.id} className={styles.scanThumb} role="listitem">
+                  <div className={styles.scanThumbFrame}>
+                    <img
+                      src={receiptScanImageUrl(r.id)}
+                      alt=""
+                      className={styles.scanThumbImg}
+                      width={160}
+                      height={280}
+                      loading="lazy"
+                    />
+                  </div>
+                  <span className={styles.scanThumbCap}>{r.receiptCode}</span>
+                  <span className={styles.scanThumbAmt}>
+                    {formatCurrency(r.amount, locale)} {t('currency')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <ReceiptsMonthDownloadBar
+              receipts={displayedReceipts}
+              year={EMPLOYEE_RECEIPTS_YEAR}
+              month={selectedMonth}
+              singleEmployeeName={emp.fullName}
+            />
+          </>
         )}
       </Card>
     </div>
