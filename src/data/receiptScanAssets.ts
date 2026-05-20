@@ -25,3 +25,13 @@ export const RECEIPT_SCAN_FILES = [
 export function receiptScanImageUrl(receiptId: string): string {
   return `${RECEIPT_SCAN_PUBLIC_DIR}/${receiptId}.png`;
 }
+
+/** Demo: mavjud skanlar orasidan barqaror “tasodifiy” tanlash. */
+export function receiptScanImageFromPool(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+  }
+  const file = RECEIPT_SCAN_FILES[(h >>> 0) % RECEIPT_SCAN_FILES.length];
+  return `${RECEIPT_SCAN_PUBLIC_DIR}/${file}`;
+}
