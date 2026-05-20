@@ -10,7 +10,7 @@ import {
 } from '@/utils/receiptExport';
 import {
   downloadReceiptsExcel,
-  downloadReceiptsExcelGrouped,
+  downloadReceiptsExcelAllHorizontal,
   receiptsAllMonthBaseName,
   receiptsEmployeeMonthBaseName,
   type ReceiptAmountExport,
@@ -100,7 +100,7 @@ export function ReceiptsMonthDownloadBar({
           : employeeGroups[0].receipts;
       return downloadReceiptsExcel(name, amounts, excelLabels, formatAmount);
     }
-    return downloadReceiptsExcelGrouped(employeeGroups, fileBase, excelLabels, formatAmount);
+    return downloadReceiptsExcelAllHorizontal(employeeGroups, fileBase, excelLabels, formatAmount);
   };
 
   const pdfBaseName = singleEmployeeName

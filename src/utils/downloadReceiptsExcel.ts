@@ -159,8 +159,125 @@ export type ReceiptEmployeeGroup = {
   receipts: ReceiptAmountExport[];
 };
 
+function colLetter(colIndex: number): string {
+  let n = colIndex;
+  let s = '';
+  while (n >= 0) {
+    s = String.fromCharCode((n % 26) + 65) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
+function buildHorizontalRows(
+  groups: ReceiptEmployeeGroup[],
+  labels: ReceiptsExcelMinimalLabels,
+  formatAmount: (amount: number) => string,
+): string[][] {
+  const headerRow = groups.map(() => labels.employeeName);
+  const nameRow = groups.map((g) => g.employeeName);
+  const maxAmountRows = Math.max(...groups.map((g) => g.receipts.length), 0);
+
+  const amountRows: string[][] = [];
+  for (let i = 0; i < maxAmountRows; i++) {
+    amountRows.push(
+      groups.map((g) => {
+        const item = g.receipts[i];
+        return item ? formatAmount(item.amount) : '';
+      }),
+    );
+  }
+
+  const totalRow = groups.map((g) => {
+    const total = g.receipts.reduce((sum, item) => sum + item.amount, 0);
+    return formatAmount(total);
+  });
+
+  return [headerRow, nameRow, ...amountRows, [], totalRow];
+}
+
+function createHorizontalStyledWorksheet(
+  groups: ReceiptEmployeeGroup[],
+  labels: ReceiptsExcelMinimalLabels,
+  formatAmount: (amount: number) => string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  XLSX: { utils: { aoa_to_sheet: (data: (string | number)[][]) => Record<string, unknown> } },
+): Record<string, unknown> {
+  const rows = buildHorizontalRows(groups, labels, formatAmount);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  const headerStyle: CellStyle = {
+    font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+  const nameStyle: CellStyle = {
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+  const amountStyle: CellStyle = {
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+  const totalStyle: CellStyle = {
+    font: { bold: true, sz: 12 },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+
+  const colCount = groups.length;
+  const maxAmountRows = Math.max(...groups.map((g) => g.receipts.length), 0);
+  const totalExcelRow = 4 + maxAmountRows;
+
+  for (let c = 0; c < colCount; c++) {
+    const col = colLetter(c);
+    ws[`${col}1`] = styledCell(rows[0][c] as string, headerStyle);
+    ws[`${col}2`] = styledCell(rows[1][c] as string, nameStyle);
+    ws[`${col}${totalExcelRow}`] = styledCell(rows[rows.length - 1][c] as string, totalStyle);
+  }
+
+  for (let r = 0; r < maxAmountRows; r++) {
+    for (let c = 0; c < colCount; c++) {
+      const value = rows[2 + r][c];
+      if (value) {
+        ws[`${colLetter(c)}${3 + r}`] = styledCell(value as string, amountStyle);
+      }
+    }
+  }
+
+  ws['!cols'] = groups.map((g) => {
+    const total = g.receipts.reduce((sum, item) => sum + item.amount, 0);
+    const maxLen = Math.max(
+      labels.employeeName.length,
+      g.employeeName.length,
+      formatAmount(total).length,
+      ...g.receipts.map((item) => formatAmount(item.amount).length),
+      12,
+    );
+    return { wch: Math.min(maxLen + 2, 36) };
+  });
+
+  return ws;
+}
+
 /**
- * Bir nechta xodim — har biri alohida varaq (xuddi shu minimal format).
+ * Barcha ishchilar — bitta varaq: ismlar gorizontal, summalar vertikal, pastda jami.
+ */
+export async function downloadReceiptsExcelAllHorizontal(
+  groups: ReceiptEmployeeGroup[],
+  fileBaseName: string,
+  labels: ReceiptsExcelMinimalLabels,
+  formatAmount: (amount: number) => string,
+): Promise<void> {
+  const nonEmpty = groups.filter((g) => g.receipts.length > 0);
+  if (nonEmpty.length === 0) return;
+
+  const XLSX = await import('xlsx-js-style');
+  const ws = createHorizontalStyledWorksheet(nonEmpty, labels, formatAmount, XLSX);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, ws, 'Receipts');
+  XLSX.writeFile(workbook, `${sanitizeFileName(fileBaseName)}.xlsx`);
+}
+
+/**
+ * Bir nechta xodim — har biri alohida varaq (vertikal A ustun).
+ * @deprecated Umumiy eksport uchun `downloadReceiptsExcelAllHorizontal` ishlatiladi.
  */
 export async function downloadReceiptsExcelGrouped(
   groups: ReceiptEmployeeGroup[],
