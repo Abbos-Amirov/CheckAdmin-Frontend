@@ -1,0 +1,151 @@
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.compact {
+  gap: 10px;
+
+  .markWrap {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .wordmark {
+    font-size: 1rem;
+  }
+
+  .receipt {
+    font-size: 0.9375rem;
+  }
+}
+
+.markWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.markGlow {
+  position: absolute;
+  inset: 2px;
+  border-radius: 16px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--color-accent) 55%, #2d9d5f) 0%,
+    color-mix(in srgb, var(--color-accent) 85%, #1a6b45) 100%
+  );
+  filter: blur(10px);
+  opacity: 0.45;
+
+  [data-theme='dark'] & {
+    opacity: 0.55;
+  }
+}
+
+.mark {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--color-accent) 18%, #ffffff) 0%,
+    color-mix(in srgb, var(--color-accent) 42%, #f6efe8) 48%,
+    color-mix(in srgb, var(--color-accent) 72%, #e8d5c4) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, #ffffff);
+  box-shadow:
+    0 10px 24px color-mix(in srgb, var(--color-accent) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+
+  [data-theme='dark'] & {
+    background: linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--color-accent) 22%, #1f2937) 0%,
+      color-mix(in srgb, var(--color-accent) 38%, #111827) 100%
+    );
+    border-color: color-mix(in srgb, var(--color-accent) 40%, #374151);
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+}
+
+.markSvg {
+  width: 34px;
+  height: 34px;
+}
+
+.markPaper {
+  fill: rgba(255, 255, 255, 0.92);
+
+  [data-theme='dark'] & {
+    fill: rgba(255, 255, 255, 0.88);
+  }
+}
+
+.markLines {
+  stroke: color-mix(in srgb, var(--color-accent) 55%, #374151);
+}
+
+.markBadge {
+  fill: #2d9d5f;
+}
+
+.markCheck {
+  stroke: #ffffff;
+}
+
+.text {
+  min-width: 0;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.28em;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.pns {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  background: linear-gradient(
+    120deg,
+    var(--color-text) 0%,
+    color-mix(in srgb, var(--color-accent) 35%, var(--color-text)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.receipt {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--color-accent) 78%, var(--color-text));
+}
+
+.subtitle {
+  margin: 7px 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: var(--color-text-muted);
+}

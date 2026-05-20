@@ -18,6 +18,14 @@ export const mockDashboardMeta: DashboardMeta = {
 export const PAYROLL_CAP_INTERNAL_WON = 400_000;
 export const PAYROLL_CAP_EXTERNAL_WON = 525_000;
 
+/** Dashboard: bu oy berilgan ovqat puli (StatCard default). */
+export const DEFAULT_PAYROLL_DISBURSED_INTERNAL_WON = PAYROLL_CAP_INTERNAL_WON;
+export const DEFAULT_PAYROLL_DISBURSED_EXTERNAL_WON = PAYROLL_CAP_EXTERNAL_WON;
+
+/** Har bir ishchi uchun oy ajratmasi (pending chek kartochkalarida). */
+export const EMPLOYEE_MONTHLY_ALLOCATION_INTERNAL_WON = PAYROLL_CAP_INTERNAL_WON;
+export const EMPLOYEE_MONTHLY_ALLOCATION_EXTERNAL_WON = PAYROLL_CAP_EXTERNAL_WON;
+
 export const mockEmployees: Employee[] = [
   {
     id: 'e1',

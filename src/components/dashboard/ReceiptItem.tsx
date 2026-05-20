@@ -64,12 +64,6 @@ export function ReceiptItem({
 
         <dl className={styles.stats}>
           <div className={styles.stat}>
-            <dt>{t('receiptChequeLine')}</dt>
-            <dd>
-              {formatCurrency(receipt.amount, locale)} {t('currency')}
-            </dd>
-          </div>
-          <div className={styles.stat}>
             <dt>{t('pendingReceiptMonthTotal')}</dt>
             <dd className={styles.statHighlight}>
               {formatCurrency(monthReceiptsTotal, locale)} {t('currency')}

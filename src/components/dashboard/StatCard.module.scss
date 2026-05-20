@@ -6,6 +6,43 @@
   gap: 10px;
 }
 
+.clickable {
+  padding: 0;
+}
+
+.clickTarget {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-height: 120px;
+  padding: 22px 22px 20px;
+  margin: 0;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.02);
+
+    [data-theme='dark'] & {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
 .label {
   font-size: 0.8125rem;
   color: var(--color-text-muted);

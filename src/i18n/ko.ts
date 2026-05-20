@@ -1,7 +1,7 @@
 import type { TranslationKey } from './uz';
 
 export const ko: Record<TranslationKey, string> = {
-  appTitle: 'Admin Panel',
+  appTitle: 'PNS Receipt',
   appSubtitle: '식비 영수증 시스템',
   navMain: '메인',
   navAnalysis: '분석',
@@ -25,6 +25,13 @@ export const ko: Record<TranslationKey, string> = {
   payrollInternal: '사내 근로자 지급',
   payrollExternal: '사외 근로자 지급',
   payrollMonthHint: '이번 달 식비 지급액',
+  payrollDisbursementPrompt: '{{label}} — 이번 달 지급액을 입력하세요(원):',
+  payrollDisbursementPromptShort: '이번 달 식비 지급액을 입력하세요.',
+  payrollDisbursementAmountLabel: '금액',
+  payrollDisbursementSave: '저장',
+  payrollDisbursementCancel: '취소',
+  payrollDisbursementInvalid: '잘못된 금액입니다. 숫자만 입력하세요.',
+  payrollDisbursementEditAria: '{{label}} 금액 수정',
   workplaceColumn: '근무 구분',
   workplaceInternalShort: '사내',
   workplaceExternalShort: '사외',

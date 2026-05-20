@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '@/app/providers/I18nProvider';
+import { PnsReceiptLogo } from '@/components/brand/PnsReceiptLogo';
 import styles from './Sidebar.module.scss';
 
 type NavItem = {
@@ -29,8 +30,7 @@ export function Sidebar({ onNavigate }: Props) {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
-        <div className={styles.brandTitle}>{t('appTitle')}</div>
-        <div className={styles.brandSubtitle}>{t('appSubtitle')}</div>
+        <PnsReceiptLogo subtitle={t('appSubtitle')} />
       </div>
 
       <nav className={styles.nav} aria-label="Main">

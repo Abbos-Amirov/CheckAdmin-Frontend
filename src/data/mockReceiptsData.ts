@@ -267,7 +267,7 @@ const abbosReceipts: Omit<Receipt, 'imageUrl'>[] = [
     employeeId: 'e1',
     employeeName: 'Abbos',
     amount: 13_820,
-    status: 'PENDING',
+    status: 'APPROVED',
     createdAt: '2026-05-13T11:59:47.000Z',
     lineItems: [
       {
@@ -331,7 +331,7 @@ const abbosReceipts: Omit<Receipt, 'imageUrl'>[] = [
     employeeId: 'e1',
     employeeName: 'Abbos',
     amount: 15_000,
-    status: 'PENDING',
+    status: 'APPROVED',
     createdAt: '2026-05-10T12:40:00.000Z',
     lineItems: [
       {
@@ -381,7 +381,7 @@ const abbosReceipts: Omit<Receipt, 'imageUrl'>[] = [
     employeeId: 'e1',
     employeeName: 'Abbos',
     amount: 16_800,
-    status: 'PENDING',
+    status: 'APPROVED',
     createdAt: '2026-05-08T14:30:00.000Z',
     lineItems: [
       { itemCode: 'SB-01', name: '음료 1', quantity: 1, unitPrice: 5_600, lineTotal: 5_600 },
