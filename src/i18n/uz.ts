@@ -146,6 +146,7 @@ export const uz = {
   receiptExcelGrandTotal: 'Umumiy summa',
   receiptsMonthBulkDownloadsAria:
     'Tanlangan oy uchun barcha cheklarni PNG, PDF va Excel formatida yuklab olish',
+  receiptsWorkerDownloadsAria: '{{name}} — cheklarni PNG, PDF va Excel formatida yuklab olish',
   employeeReceiptsBulkDownloadsAria:
     'Tanlangan oy uchun barcha chek skanlari va ma’lumotlarini yuklab olish',
 } as const;

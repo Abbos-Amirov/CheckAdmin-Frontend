@@ -22,6 +22,17 @@ export function receiptsAllMonthBaseName(year: number, month: number): string {
   return `receipts_all_${year}-${m}`;
 }
 
+/** Fayl nomi: `Abbos_2026-05` */
+export function receiptsEmployeeMonthBaseName(
+  employeeName: string,
+  year: number,
+  month: number,
+): string {
+  const m = String(month).padStart(2, '0');
+  const safe = employeeName.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').slice(0, 40);
+  return `${safe}_${year}-${m}`;
+}
+
 function sanitizeSheetName(raw: string): string {
   const cleaned = raw.replace(/[\[\]:*?/\\]/g, '_').slice(0, 31);
   return cleaned || 'Receipts';

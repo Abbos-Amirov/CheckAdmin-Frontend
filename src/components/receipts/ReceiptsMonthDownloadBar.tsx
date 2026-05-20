@@ -12,6 +12,7 @@ import {
   downloadReceiptsExcel,
   downloadReceiptsExcelGrouped,
   receiptsAllMonthBaseName,
+  receiptsEmployeeMonthBaseName,
   type ReceiptAmountExport,
   type ReceiptEmployeeGroup,
 } from '@/utils/downloadReceiptsExcel';
@@ -21,8 +22,10 @@ type Props = {
   receipts: Receipt[];
   year: number;
   month: number;
-  /** Bitta xodim sahifasi — `{name}_receipts.xlsx`. Ko‘p xodim bo‘lsa grouped. */
+  /** Bitta xodim — `{name}_receipts.xlsx` va shu xodimga tegishli PDF/PNG. */
   singleEmployeeName?: string;
+  /** `worker` — ishchi box ichidagi ixcham panel. */
+  variant?: 'page' | 'worker';
   className?: string;
 };
 
@@ -45,6 +48,7 @@ export function ReceiptsMonthDownloadBar({
   year,
   month,
   singleEmployeeName,
+  variant = 'page',
   className = '',
 }: Props) {
   const { t, locale } = useI18n();
@@ -52,6 +56,7 @@ export function ReceiptsMonthDownloadBar({
 
   const disabled = receipts.length === 0;
   const fileBase = receiptsAllMonthBaseName(year, month);
+  const isWorker = variant === 'worker';
 
   const employeeGroups = useMemo(() => groupByEmployee(receipts), [receipts]);
 
@@ -98,11 +103,19 @@ export function ReceiptsMonthDownloadBar({
     return downloadReceiptsExcelGrouped(employeeGroups, fileBase, excelLabels, formatAmount);
   };
 
+  const pdfBaseName = singleEmployeeName
+    ? `${receiptsEmployeeMonthBaseName(singleEmployeeName, year, month)}_scans`
+    : `${fileBase}_scans`;
+
+  const ariaLabel = singleEmployeeName
+    ? t('receiptsWorkerDownloadsAria', { name: singleEmployeeName })
+    : t('receiptsMonthBulkDownloadsAria');
+
   return (
     <div
-      className={`${styles.bar} ${className}`.trim()}
+      className={`${styles.bar} ${isWorker ? styles.barWorker : ''} ${className}`.trim()}
       role="group"
-      aria-label={t('receiptsMonthBulkDownloadsAria')}
+      aria-label={ariaLabel}
       aria-busy={busy !== null}
     >
       <button
@@ -117,7 +130,7 @@ export function ReceiptsMonthDownloadBar({
         type="button"
         className={`${styles.btn} ${styles.btnPdf}`}
         disabled={disabled || busy !== null}
-        onClick={() => run('pdf', () => downloadMergedReceiptScansPdf(scanUrls, `${fileBase}_scans`))}
+        onClick={() => run('pdf', () => downloadMergedReceiptScansPdf(scanUrls, pdfBaseName))}
       >
         {busy === 'pdf' ? '…' : t('receiptDownloadPdf')}
       </button>

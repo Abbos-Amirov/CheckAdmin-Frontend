@@ -147,5 +147,6 @@ export const ko: Record<TranslationKey, string> = {
   receiptExcelGrandTotal: '총 금액',
   receiptsMonthBulkDownloadsAria:
     '선택한 월의 모든 영수증을 PNG, PDF, Excel로 다운로드',
+  receiptsWorkerDownloadsAria: '{{name}} — 영수증 PNG, PDF, Excel 다운로드',
   employeeReceiptsBulkDownloadsAria: '선택한 월의 모든 영수증 스캔·데이터 다운로드',
 };

@@ -177,6 +177,14 @@ export function ReceiptsPage() {
                   </div>
                 </div>
               </div>
+              <ReceiptsMonthDownloadBar
+                receipts={g.receipts}
+                year={RECEIPTS_PAGE_YEAR}
+                month={selectedMonth}
+                singleEmployeeName={g.employeeName}
+                variant="worker"
+                className={styles.workerDownloads}
+              />
               <div className={styles.horizontalStrip} role="list">
                 {g.receipts.map((r) => (
                   <div key={r.id} className={styles.stripItem} role="listitem">
