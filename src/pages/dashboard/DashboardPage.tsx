@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
-import { useReceipts } from '@/app/providers/ReceiptsProvider';
-import { mockDashboardMeta, mockDashboardStats, mockEmployees } from '@/data/mockDashboard';
 import { useAdminChecks } from '@/hooks/useAdminChecks';
 import { useAdminCheckCountsByMonth } from '@/hooks/useAdminCheckCountsByMonth';
+import { useEmployeeMealAllowances } from '@/hooks/useEmployeeMealAllowances';
+import { useEmployees } from '@/hooks/useEmployees';
 import { useMealBudgets } from '@/hooks/useMealBudgets';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
 import { EmployeeProgressCard } from '@/components/dashboard/EmployeeProgressCard';
@@ -26,7 +26,6 @@ type PayrollEditorState = {
 };
 
 export function DashboardPage() {
-  const { receipts: mockReceipts } = useReceipts();
   const { t, locale } = useI18n();
   const [selectedYear, setSelectedYear] = useState(DEMO_CALENDAR_DEFAULT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState(DEMO_RECEIPTS_MONTH);
@@ -54,10 +53,41 @@ export function DashboardPage() {
 
   const { countsByMonth } = useAdminCheckCountsByMonth(selectedYear);
 
+  const {
+    employees,
+    loading: employeesLoading,
+    error: employeesLoadError,
+    reload: reloadEmployees,
+  } = useEmployees();
+
+  const {
+    allowanceMap,
+    loading: allowancesLoading,
+    error: allowancesLoadError,
+    reload: reloadAllowances,
+  } = useEmployeeMealAllowances(selectedYear, selectedMonth);
+
+  const submittedEmployeesLoading = employeesLoading || allowancesLoading || checksLoading;
+
   const pendingCount = useMemo(
     () => periodReceipts.filter((r) => r.status === 'PENDING').length,
     [periodReceipts],
   );
+
+  const uploadedChecksCount = useMemo(
+    () => periodReceipts.filter((r) => r.status !== 'REJECTED').length,
+    [periodReceipts],
+  );
+
+  const employeeStats = useMemo(() => {
+    let internal = 0;
+    let external = 0;
+    for (const employee of employees) {
+      if (employee.workplace === 'INTERNAL') internal += 1;
+      else external += 1;
+    }
+    return { total: employees.length, internal, external };
+  }, [employees]);
 
   const periodTotal = useMemo(
     () => periodReceipts.reduce((sum, r) => sum + r.amount, 0),
@@ -146,18 +176,37 @@ export function DashboardPage() {
         </div>
       ) : null}
 
+      {employeesLoadError ? (
+        <div className={styles.apiError} role="alert">
+          <p>{employeesLoadError}</p>
+          <button type="button" className={styles.retryBtn} onClick={() => void reloadEmployees()}>
+            {t('retry')}
+          </button>
+        </div>
+      ) : null}
+
+      {allowancesLoadError ? (
+        <div className={styles.apiError} role="alert">
+          <p>{allowancesLoadError}</p>
+          <button type="button" className={styles.retryBtn} onClick={() => void reloadAllowances()}>
+            {t('retry')}
+          </button>
+        </div>
+      ) : null}
+
       <section className={styles.stats} aria-label={t('dashboard')}>
         <StatCard
           label={t('totalEmployees')}
-          value={mockDashboardStats.totalEmployees}
-          hint={t('newThisMonth', {
-            count: mockDashboardMeta.newEmployeesThisMonth,
+          value={employeesLoading ? '…' : employeeStats.total}
+          hint={t('dashboardEmployeesBreakdown', {
+            internal: employeeStats.internal,
+            external: employeeStats.external,
           })}
         />
         <StatCard
           label={t('pendingReceiptsStat')}
-          value={pendingCount}
-          hint={t('needConfirmation')}
+          value={checksLoading ? '…' : pendingCount}
+          hint={t('dashboardUploadedChecksHint', { count: uploadedChecksCount })}
           tone="warning"
         />
         <StatCard
@@ -200,12 +249,12 @@ export function DashboardPage() {
 
       <section className={styles.grid}>
         <EmployeeProgressCard
-          employees={mockEmployees}
-          receipts={mockReceipts}
-          year={selectedYear}
-          month={selectedMonth}
+          employees={employees}
+          receipts={periodReceipts}
           internalBudget={internalBudget}
           externalBudget={externalBudget}
+          allowanceMap={allowanceMap}
+          loading={submittedEmployeesLoading}
         />
         <PendingReceiptsCard
           receipts={periodReceipts}

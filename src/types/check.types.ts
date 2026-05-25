@@ -29,3 +29,12 @@ export type AdminChecksResponse = {
   month?: string;
   status?: ApiCheckStatus;
 };
+
+export type EmployeeChecksResponse = {
+  employee: ApiCheckUser & { role?: string; phone?: string };
+  totalChecks: number;
+  totalAmount: number;
+  checks: ApiCheck[];
+  month?: string;
+  status?: ApiCheckStatus;
+};

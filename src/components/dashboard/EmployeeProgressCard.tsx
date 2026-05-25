@@ -1,12 +1,9 @@
 import { useMemo } from 'react';
-import {
-  PAYROLL_CAP_EXTERNAL_WON,
-  PAYROLL_CAP_INTERNAL_WON,
-} from '@/data/mockDashboard';
 import { useI18n } from '@/app/providers/I18nProvider';
 import type { Employee } from '@/types/employee.types';
+import type { EmployeeMealAllowance } from '@/types/employeeMealAllowance.types';
 import type { Receipt } from '@/types/receipt.types';
-import { receiptInYearMonth } from '@/utils/receiptMonthFilter';
+import { resolveEmployeeMonthlyAllocation } from '@/utils/employeeAllowance';
 import { formatCurrency } from '@/utils/format';
 import { Card } from '@/components/common/Card';
 import styles from './EmployeeProgressCard.module.scss';
@@ -14,44 +11,56 @@ import styles from './EmployeeProgressCard.module.scss';
 type Props = {
   employees: Employee[];
   receipts: Receipt[];
-  year: number;
-  month: number;
   internalBudget?: number | null;
   externalBudget?: number | null;
+  allowanceMap?: Map<string, EmployeeMealAllowance>;
+  loading?: boolean;
 };
 
 function payrollCap(
   emp: Employee,
+  allowanceMap: Map<string, EmployeeMealAllowance> | undefined,
   internalBudget: number | null | undefined,
   externalBudget: number | null | undefined,
 ): number {
-  if (emp.workplace === 'INTERNAL') {
-    return internalBudget ?? PAYROLL_CAP_INTERNAL_WON;
-  }
-  return externalBudget ?? PAYROLL_CAP_EXTERNAL_WON;
+  const allowance = allowanceMap?.get(emp.id);
+  const resolved = resolveEmployeeMonthlyAllocation(
+    allowance,
+    emp.workplace,
+    internalBudget,
+    externalBudget,
+  );
+  return resolved ?? 0;
+}
+
+function employeeSpent(receipts: Receipt[], employeeId: string): number {
+  return receipts
+    .filter((r) => r.employeeId === employeeId && r.status !== 'REJECTED')
+    .reduce((sum, r) => sum + r.amount, 0);
 }
 
 export function EmployeeProgressCard({
   employees,
   receipts,
-  year,
-  month,
   internalBudget,
   externalBudget,
+  allowanceMap,
+  loading = false,
 }: Props) {
   const { t, locale } = useI18n();
 
-  const rows = useMemo(
-    () =>
-      employees.map((emp) => {
-        const cap = payrollCap(emp, internalBudget, externalBudget);
-        const spent = receipts
-          .filter(
-            (r) =>
-              r.employeeId === emp.id &&
-              receiptInYearMonth(r.createdAt, year, month),
-          )
-          .reduce((sum, r) => sum + r.amount, 0);
+  const rows = useMemo(() => {
+    const submittedIds = new Set(
+      receipts
+        .filter((r) => r.status !== 'REJECTED')
+        .map((r) => r.employeeId),
+    );
+
+    return employees
+      .filter((emp) => submittedIds.has(emp.id))
+      .map((emp) => {
+        const cap = payrollCap(emp, allowanceMap, internalBudget, externalBudget);
+        const spent = employeeSpent(receipts, emp.id);
         const utilization = cap > 0 ? spent / cap : 0;
         const pctFill = Math.min(100, Math.max(0, utilization * 100));
         const labelLeftPct = Math.min(96, Math.max(4, pctFill));
@@ -60,15 +69,20 @@ export function EmployeeProgressCard({
           utilization >= 0.92 ? styles.barWarn : utilization >= 0.7 ? styles.barMid : styles.barOk;
 
         return { emp, cap, spent, pctFill, labelLeftPct, barClass };
-      }),
-    [employees, receipts, year, month, internalBudget, externalBudget],
-  );
+      })
+      .sort((a, b) => b.spent - a.spent);
+  }, [employees, receipts, internalBudget, externalBudget, allowanceMap]);
 
   return (
     <Card className={styles.card}>
       <div className={styles.head}>
         <h2 className={styles.title}>{t('submittedEmployees')}</h2>
       </div>
+      {loading ? (
+        <p className={styles.empty}>{t('loading')}</p>
+      ) : rows.length === 0 ? (
+        <p className={styles.empty}>{t('submittedEmployeesEmpty')}</p>
+      ) : (
       <ul className={styles.list}>
         {rows.map(({ emp, cap, spent, pctFill, labelLeftPct, barClass }) => (
           <li key={emp.id} className={styles.row}>
@@ -95,6 +109,7 @@ export function EmployeeProgressCard({
           </li>
         ))}
       </ul>
+      )}
     </Card>
   );
 }

@@ -1,75 +1,50 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useI18n } from '@/app/providers/I18nProvider';
-import { useReceipts } from '@/app/providers/ReceiptsProvider';
+import { useEmployeeChecks } from '@/hooks/useEmployeeChecks';
 import { useEmployees } from '@/hooks/useEmployees';
 import { formatCalendarMonth, formatCurrency, formatDashboardMonth } from '@/utils/format';
-import { receiptScanImageUrl } from '@/data/receiptScanAssets';
+import { DEMO_CALENDAR_DEFAULT_YEAR } from '@/utils/receiptMonthFilter';
 import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDownloadBar';
 import { Card } from '@/components/common/Card';
 import styles from './EmployeeDetailPage.module.scss';
-
-/** Demo yili — Cheklar sahifasi bilan bir xil. */
-const EMPLOYEE_RECEIPTS_YEAR = 2026;
 
 const MONTH_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
   const { t, locale } = useI18n();
-  const { receipts } = useReceipts();
-  const { getEmployeeById, loading, error, reload } = useEmployees();
+  const { getEmployeeById, loading: employeeLoading, error: employeeError, reload } =
+    useEmployees();
   const [selectedMonth, setSelectedMonth] = useState(5);
+  const receiptsYear = DEMO_CALENDAR_DEFAULT_YEAR;
+
+  const {
+    statsByMonth,
+    getReceiptsForMonth,
+    loading: checksLoading,
+    error: checksError,
+    reload: reloadChecks,
+  } = useEmployeeChecks(employeeId, receiptsYear);
 
   const emp = employeeId ? getEmployeeById(employeeId) : undefined;
 
-  const employeeReceipts = useMemo(
-    () =>
-      employeeId
-        ? receipts.filter(
-            (r) => r.employeeId === employeeId || r.employeeName === emp?.fullName,
-          )
-        : [],
-    [receipts, employeeId, emp?.fullName],
+  const displayedReceipts = useMemo(
+    () => getReceiptsForMonth(selectedMonth),
+    [getReceiptsForMonth, selectedMonth],
   );
-
-  const statsByMonth = useMemo(() => {
-    const totals = Array.from({ length: 12 }, () => ({ count: 0, total: 0 }));
-    for (const r of employeeReceipts) {
-      const d = new Date(r.createdAt);
-      if (d.getUTCFullYear() !== EMPLOYEE_RECEIPTS_YEAR) continue;
-      const mi = d.getUTCMonth();
-      totals[mi].count += 1;
-      totals[mi].total += r.amount;
-    }
-    return totals;
-  }, [employeeReceipts]);
-
-  const displayedReceipts = useMemo(() => {
-    return employeeReceipts
-      .filter((r) => {
-        const d = new Date(r.createdAt);
-        return (
-          d.getUTCFullYear() === EMPLOYEE_RECEIPTS_YEAR &&
-          d.getUTCMonth() + 1 === selectedMonth
-        );
-      })
-      .sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
-  }, [employeeReceipts, selectedMonth]);
 
   const selectedStat = statsByMonth[selectedMonth - 1];
   const periodLabelDate = useMemo(
-    () => new Date(EMPLOYEE_RECEIPTS_YEAR, selectedMonth - 1, 1),
-    [selectedMonth],
+    () => new Date(receiptsYear, selectedMonth - 1, 1),
+    [selectedMonth, receiptsYear],
   );
 
   if (!employeeId) {
     return <Navigate to="/employees" replace />;
   }
 
-  if (loading) {
+  if (employeeLoading) {
     return (
       <div className={styles.page}>
         <p className={styles.missing}>{t('loading')}</p>
@@ -77,10 +52,10 @@ export function EmployeeDetailPage() {
     );
   }
 
-  if (error) {
+  if (employeeError) {
     return (
       <div className={styles.page}>
-        <p className={styles.missing}>{error}</p>
+        <p className={styles.missing}>{employeeError}</p>
         <button type="button" className={styles.back} onClick={() => void reload()}>
           {t('retry')}
         </button>
@@ -166,11 +141,20 @@ export function EmployeeDetailPage() {
 
       <Card className={styles.receiptsCard}>
         <h3 className={styles.receiptsTitle}>
-          {t('employeeReceiptsSectionTitle', { year: EMPLOYEE_RECEIPTS_YEAR })}
+          {t('employeeReceiptsSectionTitle', { year: receiptsYear })}
         </h3>
         <p className={styles.receiptsLead}>{t('employeeReceiptsLead')}</p>
 
-        <p className={styles.yearLabel}>{t('receiptsYearLabel', { year: EMPLOYEE_RECEIPTS_YEAR })}</p>
+        {checksError ? (
+          <div className={styles.checksError} role="alert">
+            <p>{checksError}</p>
+            <button type="button" className={styles.retryBtn} onClick={() => void reloadChecks()}>
+              {t('retry')}
+            </button>
+          </div>
+        ) : null}
+
+        <p className={styles.yearLabel}>{t('receiptsYearLabel', { year: receiptsYear })}</p>
         <div
           className={styles.monthStrip}
           role="tablist"
@@ -220,7 +204,9 @@ export function EmployeeDetailPage() {
           </p>
         </div>
 
-        {displayedReceipts.length === 0 ? (
+        {checksLoading ? (
+          <p className={styles.emptyMonth}>{t('loading')}</p>
+        ) : displayedReceipts.length === 0 ? (
           <p className={styles.emptyMonth}>{t('employeeReceiptsEmptyMonth')}</p>
         ) : (
           <>
@@ -228,14 +214,18 @@ export function EmployeeDetailPage() {
               {displayedReceipts.map((r) => (
                 <li key={r.id} className={styles.scanThumb} role="listitem">
                   <div className={styles.scanThumbFrame}>
-                    <img
-                      src={receiptScanImageUrl(r.id)}
-                      alt=""
-                      className={styles.scanThumbImg}
-                      width={160}
-                      height={280}
-                      loading="lazy"
-                    />
+                    {r.imageUrl ? (
+                      <img
+                        src={r.imageUrl}
+                        alt=""
+                        className={styles.scanThumbImg}
+                        width={160}
+                        height={280}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className={styles.scanThumbPlaceholder}>{t('receiptsNoImage')}</div>
+                    )}
                   </div>
                   <span className={styles.scanThumbCap}>{r.receiptCode}</span>
                   <span className={styles.scanThumbAmt}>
@@ -246,7 +236,7 @@ export function EmployeeDetailPage() {
             </ul>
             <ReceiptsMonthDownloadBar
               receipts={displayedReceipts}
-              year={EMPLOYEE_RECEIPTS_YEAR}
+              year={receiptsYear}
               month={selectedMonth}
               singleEmployeeName={emp.fullName}
             />

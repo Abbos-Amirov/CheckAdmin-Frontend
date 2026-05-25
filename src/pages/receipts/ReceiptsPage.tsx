@@ -1,17 +1,15 @@
 import { useMemo, useState } from 'react';
 import type { Locale } from '@/i18n';
 import { useI18n } from '@/app/providers/I18nProvider';
-import { useReceipts } from '@/app/providers/ReceiptsProvider';
 import type { Receipt, ReceiptStatus } from '@/types/receipt.types';
 import { formatCurrency, formatDashboardMonth } from '@/utils/format';
 import { Card } from '@/components/common/Card';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
 import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDownloadBar';
-import { receiptScanImageUrl } from '@/data/receiptScanAssets';
+import { useReceiptsPage } from '@/hooks/useReceiptsPage';
 import {
   DEMO_CALENDAR_DEFAULT_YEAR,
   DEMO_RECEIPTS_MONTH,
-  receiptInYearMonth,
 } from '@/utils/receiptMonthFilter';
 import styles from './ReceiptsPage.module.scss';
 
@@ -19,65 +17,27 @@ function totalReceiptAmount(list: Receipt[]): number {
   return list.reduce((sum, r) => sum + r.amount, 0);
 }
 
-type WorkerGroup = {
-  employeeId: string;
-  employeeName: string;
-  receipts: Receipt[];
-};
-
 export function ReceiptsPage() {
   const { t, locale } = useI18n();
-  const { receipts } = useReceipts();
   const [selectedYear, setSelectedYear] = useState(DEMO_CALENDAR_DEFAULT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState(DEMO_RECEIPTS_MONTH);
 
-  const countsByMonth = useMemo(() => {
-    const arr = Array.from({ length: 12 }, () => 0);
-    for (const r of receipts) {
-      const d = new Date(r.createdAt);
-      if (d.getUTCFullYear() === selectedYear) {
-        arr[d.getUTCMonth()] += 1;
-      }
-    }
-    return arr;
-  }, [receipts, selectedYear]);
-
-  const filtered = useMemo(
-    () =>
-      receipts.filter((r) =>
-        receiptInYearMonth(r.createdAt, selectedYear, selectedMonth),
-      ),
-    [receipts, selectedYear, selectedMonth],
-  );
-
-  const groups = useMemo(() => {
-    const map = new Map<string, WorkerGroup>();
-    for (const r of filtered) {
-      const existing = map.get(r.employeeId);
-      if (existing) {
-        existing.receipts.push(r);
-      } else {
-        map.set(r.employeeId, {
-          employeeId: r.employeeId,
-          employeeName: r.employeeName,
-          receipts: [r],
-        });
-      }
-    }
-    for (const g of map.values()) {
-      g.receipts.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
-    }
-    return [...map.values()].sort((a, b) =>
-      a.employeeName.localeCompare(b.employeeName, undefined, { sensitivity: 'base' }),
-    );
-  }, [filtered]);
+  const {
+    workers,
+    receipts,
+    groups,
+    selectedEmployeeId,
+    setSelectedEmployeeId,
+    loading,
+    error,
+    reload,
+    countsByMonth,
+  } = useReceiptsPage(selectedYear, selectedMonth);
 
   const monthTotals = useMemo(() => {
-    const amount = totalReceiptAmount(filtered);
-    return { count: filtered.length, amount };
-  }, [filtered]);
+    const amount = totalReceiptAmount(receipts);
+    return { count: receipts.length, amount };
+  }, [receipts]);
 
   const periodLabelDate = useMemo(
     () => new Date(selectedYear, selectedMonth - 1, 1),
@@ -97,6 +57,37 @@ export function ReceiptsPage() {
         countsByMonth={countsByMonth}
       />
 
+      <div className={styles.filters}>
+        <label className={styles.filterLabel} htmlFor="receipts-employee-filter">
+          {t('receiptsEmployeeFilterLabel')}
+        </label>
+        <select
+          id="receipts-employee-filter"
+          className={styles.filterSelect}
+          value={selectedEmployeeId ?? ''}
+          onChange={(event) =>
+            setSelectedEmployeeId(event.target.value ? event.target.value : null)
+          }
+          disabled={loading}
+        >
+          <option value="">{t('receiptsEmployeeAll')}</option>
+          {workers.map((worker) => (
+            <option key={worker._id} value={worker._id}>
+              {worker.fullName}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {error ? (
+        <div className={styles.apiError} role="alert">
+          <p>{error}</p>
+          <button type="button" className={styles.retryBtn} onClick={() => void reload()}>
+            {t('retry')}
+          </button>
+        </div>
+      ) : null}
+
       <div className={styles.periodBanner}>
         <h2 className={styles.periodTitle}>
           {t('receiptsGroupedTitle', {
@@ -106,7 +97,11 @@ export function ReceiptsPage() {
         <p className={styles.periodHint}>{t('receiptsThumbHint')}</p>
       </div>
 
-      {groups.length > 0 ? (
+      {loading ? (
+        <Card className={styles.emptyCard}>
+          <p className={styles.emptyText}>{t('loading')}</p>
+        </Card>
+      ) : groups.length > 0 ? (
         <>
           <div className={styles.overviewBar} aria-label={t('receiptsMonthOverviewHint')}>
             <div className={styles.overviewBlock}>
@@ -122,65 +117,65 @@ export function ReceiptsPage() {
             </div>
           </div>
 
-          <Card className={styles.allDownloadsCard}>
-            <h3 className={styles.allDownloadsTitle}>
-              {t('receiptsAllEmployeesDownloadTitle')}
-            </h3>
-            <p className={styles.allDownloadsHint}>{t('receiptsAllEmployeesDownloadHint')}</p>
-            <ReceiptsMonthDownloadBar
-              receipts={filtered}
-              year={selectedYear}
-              month={selectedMonth}
-              variant="page"
-              className={styles.allDownloadsBar}
-            />
-          </Card>
-        </>
-      ) : null}
+          {!selectedEmployeeId ? (
+            <Card className={styles.allDownloadsCard}>
+              <h3 className={styles.allDownloadsTitle}>
+                {t('receiptsAllEmployeesDownloadTitle')}
+              </h3>
+              <p className={styles.allDownloadsHint}>{t('receiptsAllEmployeesDownloadHint')}</p>
+              <ReceiptsMonthDownloadBar
+                receipts={receipts}
+                year={selectedYear}
+                month={selectedMonth}
+                variant="page"
+                className={styles.allDownloadsBar}
+              />
+            </Card>
+          ) : null}
 
-      {groups.length === 0 ? (
+          <div className={styles.workerGroups}>
+            {groups.map((g) => (
+              <Card key={g.employeeId} className={styles.workerBox}>
+                <div className={styles.workerBanner}>
+                  <h3 className={styles.workerTitle}>{g.employeeName}</h3>
+                  <div className={styles.workerMetrics} role="group">
+                    <div className={styles.workerMetric}>
+                      <span className={styles.workerMetricLabel}>{t('receiptsStatChecks')}</span>
+                      <span className={styles.workerMetricValue}>{g.receipts.length}</span>
+                    </div>
+                    <span className={styles.workerMetricSep} aria-hidden />
+                    <div className={styles.workerMetric}>
+                      <span className={styles.workerMetricLabel}>{t('receiptsStatTotal')}</span>
+                      <span className={styles.workerMetricValue}>
+                        {formatCurrency(totalReceiptAmount(g.receipts), locale)}
+                        <span className={styles.workerMetricCur}> {t('currency')}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.horizontalStrip} role="list">
+                  {g.receipts.map((r) => (
+                    <div key={r.id} className={styles.stripItem} role="listitem">
+                      <ReceiptDetailCard receipt={r} variant="strip" />
+                    </div>
+                  ))}
+                </div>
+                <ReceiptsMonthDownloadBar
+                  receipts={g.receipts}
+                  year={selectedYear}
+                  month={selectedMonth}
+                  singleEmployeeName={g.employeeName}
+                  variant="worker"
+                  className={styles.workerDownloads}
+                />
+              </Card>
+            ))}
+          </div>
+        </>
+      ) : (
         <Card className={styles.emptyCard}>
           <p className={styles.emptyText}>{t('receiptsNoInMonth')}</p>
         </Card>
-      ) : (
-        <div className={styles.workerGroups}>
-          {groups.map((g) => (
-            <Card key={g.employeeId} className={styles.workerBox}>
-              <div className={styles.workerBanner}>
-                <h3 className={styles.workerTitle}>{g.employeeName}</h3>
-                <div className={styles.workerMetrics} role="group">
-                  <div className={styles.workerMetric}>
-                    <span className={styles.workerMetricLabel}>{t('receiptsStatChecks')}</span>
-                    <span className={styles.workerMetricValue}>{g.receipts.length}</span>
-                  </div>
-                  <span className={styles.workerMetricSep} aria-hidden />
-                  <div className={styles.workerMetric}>
-                    <span className={styles.workerMetricLabel}>{t('receiptsStatTotal')}</span>
-                    <span className={styles.workerMetricValue}>
-                      {formatCurrency(totalReceiptAmount(g.receipts), locale)}
-                      <span className={styles.workerMetricCur}> {t('currency')}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className={styles.horizontalStrip} role="list">
-                {g.receipts.map((r) => (
-                  <div key={r.id} className={styles.stripItem} role="listitem">
-                    <ReceiptDetailCard receipt={r} variant="strip" />
-                  </div>
-                ))}
-              </div>
-              <ReceiptsMonthDownloadBar
-                receipts={g.receipts}
-                year={selectedYear}
-                month={selectedMonth}
-                singleEmployeeName={g.employeeName}
-                variant="worker"
-                className={styles.workerDownloads}
-              />
-            </Card>
-          ))}
-        </div>
       )}
     </div>
   );
@@ -201,14 +196,20 @@ function ReceiptDetailCard({
       <div className={styles.blockInner}>
         <div className={styles.scan}>
           <div className={styles.scanFrame}>
-            <img
-              src={receiptScanImageUrl(receipt.id)}
-              alt=""
-              className={styles.scanImg}
-              width={240}
-              height={350}
-              loading="lazy"
-            />
+            {receipt.imageUrl ? (
+              <img
+                src={receipt.imageUrl}
+                alt=""
+                className={styles.scanImg}
+                width={240}
+                height={350}
+                loading="lazy"
+              />
+            ) : (
+              <div className={styles.scanPlaceholder} aria-hidden>
+                {t('receiptsNoImage')}
+              </div>
+            )}
           </div>
         </div>
 
@@ -253,19 +254,27 @@ function ReceiptDetailCard({
                   </tr>
                 </thead>
                 <tbody>
-                  {receipt.lineItems.map((line, idx) => (
-                    <tr key={`${receipt.id}-line-${idx}`}>
-                      <td className={styles.mono}>{line.itemCode ?? '—'}</td>
-                      <td>{line.name}</td>
-                      <td className={styles.num}>{line.quantity}</td>
-                      <td className={styles.num}>
-                        {formatCurrency(line.unitPrice, locale)}
-                      </td>
-                      <td className={`${styles.num} ${styles.lineAmt}`}>
-                        {formatCurrency(line.lineTotal, locale)}
+                  {receipt.lineItems.length > 0 ? (
+                    receipt.lineItems.map((line, idx) => (
+                      <tr key={`${receipt.id}-line-${idx}`}>
+                        <td className={styles.mono}>{line.itemCode ?? '—'}</td>
+                        <td>{line.name}</td>
+                        <td className={styles.num}>{line.quantity}</td>
+                        <td className={styles.num}>
+                          {formatCurrency(line.unitPrice, locale)}
+                        </td>
+                        <td className={`${styles.num} ${styles.lineAmt}`}>
+                          {formatCurrency(line.lineTotal, locale)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className={styles.emptyLine}>
+                        {t('receiptItemsEmpty')}
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

@@ -7,7 +7,12 @@ import type { Receipt } from '@/types/receipt.types';
 import type { WorkplaceType } from '@/types/employee.types';
 import { receiptInYearMonth } from '@/utils/receiptMonthFilter';
 import { formatCurrency } from '@/utils/format';
-import { resolveEmployeeForReceipt } from '@/utils/employeeAllowance';
+import {
+  groupBudgetForWorkplace,
+  resolveAllowanceEditorDefaults,
+  resolveEmployeeForReceipt,
+  resolveEmployeeMonthlyAllocation,
+} from '@/utils/employeeAllowance';
 import { Card } from '@/components/common/Card';
 import { EmployeeAllowancePopover } from '@/components/dashboard/EmployeeAllowancePopover';
 import { ReceiptItem } from '@/components/dashboard/ReceiptItem';
@@ -124,14 +129,20 @@ export function PendingReceiptsCard({
     }
 
     const allowance = allowanceMap.get(resolved.mongoId);
+    const groupBudget = groupBudgetForWorkplace(
+      resolved.workplace,
+      payrollDisbursedInternal,
+      payrollDisbursedExternal,
+    );
+    const defaults = resolveAllowanceEditorDefaults(allowance, groupBudget);
     setSaveError('');
     setEditor({
       mongoId: resolved.mongoId,
       employeeName: resolved.employeeName,
       groupType: resolved.groupType,
-      baseAmount: allowance?.baseAmount ?? 0,
-      extraAmount: allowance?.extraAmount ?? 0,
-      reason: allowance?.reason ?? '',
+      baseAmount: defaults.baseAmount,
+      extraAmount: defaults.extraAmount,
+      reason: defaults.reason,
       anchorRect: event.currentTarget.getBoundingClientRect(),
     });
   };
@@ -184,8 +195,14 @@ export function PendingReceiptsCard({
         <ul className={styles.groupList}>
           {list.map((receipt) => {
             const resolved = resolveEmployeeForReceipt(receipt, users);
-            const workplace = resolved?.workplace ?? receipt.employeeWorkplace ?? 'EXTERNAL';
             const allowance = resolved ? allowanceMap.get(resolved.mongoId) : undefined;
+            const workplace = resolved?.workplace ?? receipt.employeeWorkplace ?? 'EXTERNAL';
+            const monthlyAllocation = resolveEmployeeMonthlyAllocation(
+              allowance,
+              workplace,
+              payrollDisbursedInternal,
+              payrollDisbursedExternal,
+            );
             const monthReceiptsTotal = employeeMonthReceiptsTotal(
               receipts,
               receipt.employeeId,
@@ -200,7 +217,7 @@ export function PendingReceiptsCard({
                 <ReceiptItem
                   receipt={receipt}
                   workplace={workplace}
-                  monthlyAllocation={allowance?.totalAmount ?? null}
+                  monthlyAllocation={monthlyAllocation}
                   monthReceiptsTotal={monthReceiptsTotal}
                   employeePhotoUrl={photoUrl}
                   employeeInitial={initial}

@@ -340,6 +340,43 @@
   font-size: 0.9375rem;
 }
 
+.checksError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, #dc2626 28%, var(--color-border));
+  background: color-mix(in srgb, #dc2626 8%, var(--color-bg-elevated));
+  color: #b91c1c;
+
+  [data-theme='dark'] & {
+    color: #fca5a5;
+    background: color-mix(in srgb, #dc2626 14%, var(--color-bg-elevated));
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+}
+
+.retryBtn {
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, #dc2626 35%, var(--color-border));
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
 .scanGallery {
   display: flex;
   flex-direction: row;
@@ -377,6 +414,18 @@
   object-fit: cover;
   object-position: top center;
   aspect-ratio: 240 / 350;
+}
+
+.scanThumbPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  padding: 12px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .scanThumbCap {

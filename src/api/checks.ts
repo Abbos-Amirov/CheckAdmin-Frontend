@@ -1,5 +1,5 @@
 import { apiFetch } from '@/api/client';
-import type { AdminChecksResponse, ApiCheck } from '@/types/check.types';
+import type { AdminChecksResponse, ApiCheck, EmployeeChecksResponse } from '@/types/check.types';
 
 type ApiEnvelope<T> = {
   success?: boolean;
@@ -14,17 +14,21 @@ function unwrapEnvelope<T>(payload: ApiEnvelope<T>): T {
   return payload as T;
 }
 
+function formatMonthQuery(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
 export async function fetchAdminChecks(
   year: number,
   month: number | null,
   token: string,
   status?: 'pending' | 'approved' | 'rejected',
 ): Promise<AdminChecksResponse> {
-  const query = new URLSearchParams({
-    year: String(year),
-  });
+  const query = new URLSearchParams();
   if (month !== null) {
-    query.set('month', String(month));
+    query.set('month', formatMonthQuery(year, month));
+  } else {
+    query.set('year', String(year));
   }
   if (status) {
     query.set('status', status);
@@ -32,6 +36,27 @@ export async function fetchAdminChecks(
 
   const response = await apiFetch<ApiEnvelope<AdminChecksResponse>>(
     `/admin/checks?${query.toString()}`,
+    { method: 'GET' },
+    token,
+  );
+  return unwrapEnvelope(response);
+}
+
+export type FetchEmployeeChecksOptions = {
+  year: number;
+  month: number;
+};
+
+export async function fetchEmployeeChecks(
+  employeeId: string,
+  token: string,
+  options?: FetchEmployeeChecksOptions,
+): Promise<EmployeeChecksResponse> {
+  const suffix = options
+    ? `?month=${formatMonthQuery(options.year, options.month)}`
+    : '';
+  const response = await apiFetch<ApiEnvelope<EmployeeChecksResponse>>(
+    `/admin/checks/employee/${employeeId}${suffix}`,
     { method: 'GET' },
     token,
   );

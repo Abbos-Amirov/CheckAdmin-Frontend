@@ -16,6 +16,41 @@ export function workTypeToWorkplace(workType: ApiUser['workType']): Employee['wo
   return workType === 'inside' ? 'INTERNAL' : 'EXTERNAL';
 }
 
+export function groupBudgetForWorkplace(
+  workplace: Employee['workplace'],
+  internalBudget: number | null | undefined,
+  externalBudget: number | null | undefined,
+): number | null {
+  if (workplace === 'INTERNAL') {
+    return internalBudget ?? null;
+  }
+  return externalBudget ?? null;
+}
+
+/** Guruh budgeti default; admin allowance saqlagach — shu yozuvdagi summa. */
+export function resolveEmployeeMonthlyAllocation(
+  allowance: EmployeeMealAllowance | undefined,
+  workplace: Employee['workplace'],
+  internalBudget: number | null | undefined,
+  externalBudget: number | null | undefined,
+): number | null {
+  if (allowance) {
+    return allowance.totalAmount;
+  }
+  return groupBudgetForWorkplace(workplace, internalBudget, externalBudget);
+}
+
+export function resolveAllowanceEditorDefaults(
+  allowance: EmployeeMealAllowance | undefined,
+  groupBudget: number | null | undefined,
+): { baseAmount: number; extraAmount: number; reason: string } {
+  return {
+    baseAmount: allowance?.baseAmount ?? groupBudget ?? 0,
+    extraAmount: allowance?.extraAmount ?? 0,
+    reason: allowance?.reason ?? '',
+  };
+}
+
 function normalizeName(value: string): string {
   return value.trim().toLowerCase();
 }
