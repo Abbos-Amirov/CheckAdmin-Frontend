@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { PnsReceiptLogo } from '@/components/brand/PnsReceiptLogo';
 import styles from './Sidebar.module.scss';
@@ -26,6 +27,14 @@ type Props = {
 
 export function Sidebar({ onNavigate }: Props) {
   const { t } = useI18n();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    onNavigate?.();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <aside className={styles.sidebar}>
@@ -78,7 +87,15 @@ export function Sidebar({ onNavigate }: Props) {
 
       <div className={styles.profile}>
         <div className={styles.profileRole}>{t('adminAccount')}</div>
-        <div className={styles.profileName}>{t('roleDirector')}</div>
+        <div className={styles.profileName}>
+          {user?.fullName ?? t('roleDirector')}
+        </div>
+        {user?.employeeId ? (
+          <div className={styles.profileEmail}>{user.employeeId}</div>
+        ) : null}
+        <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
+          {t('authLogout')}
+        </button>
       </div>
     </aside>
   );

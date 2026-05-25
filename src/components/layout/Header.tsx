@@ -3,6 +3,8 @@ import type { TranslationKey } from '@/i18n';
 import { formatDashboardMonth } from '@/utils/format';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { LogoutButton } from '@/components/auth/LogoutButton';
+import { Toolbar, ToolbarDivider } from '@/components/layout/Toolbar';
 import styles from './Header.module.scss';
 
 const DEMO_MONTH = new Date(2026, 4, 1);
@@ -22,8 +24,13 @@ export function Header({ titleKey }: Props) {
       </div>
       <div className={styles.right}>
         <span className={styles.month}>{monthLabel}</span>
-        <LanguageSwitcher />
-        <ThemeToggle />
+        <Toolbar>
+          <LanguageSwitcher />
+          <ToolbarDivider />
+          <ThemeToggle />
+          <ToolbarDivider />
+          <LogoutButton />
+        </Toolbar>
       </div>
     </header>
   );

@@ -1,6 +1,6 @@
 import { useI18n } from '@/app/providers/I18nProvider';
+import { toolbarStyles as styles } from '@/components/layout/Toolbar';
 import type { Locale } from '@/i18n';
-import styles from './LanguageSwitcher.module.scss';
 
 export function LanguageSwitcher() {
   const { locale, setLocale, t } = useI18n();
@@ -11,20 +11,18 @@ export function LanguageSwitcher() {
   ];
 
   return (
-    <div className={styles.wrap} role="group" aria-label={t('language')}>
-      <span className={styles.caption}>{t('language')}</span>
-      <div className={styles.buttons}>
-        {options.map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            className={`${styles.btn} ${locale === opt.id ? styles.active : ''}`}
-            onClick={() => setLocale(opt.id)}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+    <div className={styles.segment} role="group" aria-label={t('language')}>
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          className={`${styles.segmentBtn} ${locale === opt.id ? styles.segmentActive : ''}`.trim()}
+          onClick={() => setLocale(opt.id)}
+          aria-pressed={locale === opt.id}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 }

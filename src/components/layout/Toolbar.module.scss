@@ -1,0 +1,134 @@
+@use '../../styles/variables.scss' as v;
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-bg-elevated) 92%, var(--color-accent) 8%),
+      color-mix(in srgb, var(--color-bg-elevated) 96%, var(--color-accent) 4%)
+    );
+  box-shadow: var(--shadow-card);
+}
+
+.divider {
+  width: 1px;
+  height: 22px;
+  margin: 0 2px;
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--color-border));
+}
+
+.segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+
+  [data-theme='dark'] & {
+    background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  }
+}
+
+.segmentBtn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color v.$transition-fast,
+    color v.$transition-fast,
+    box-shadow v.$transition-fast,
+    transform v.$transition-fast;
+
+  @include v.focus-ring;
+
+  &:hover:not(.segmentActive) {
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+}
+
+.segmentActive {
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    var(--color-accent),
+    color-mix(in srgb, var(--color-accent) 72%, #7a4a28)
+  );
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-accent) 34%, transparent);
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color v.$transition-fast,
+    color v.$transition-fast,
+    box-shadow v.$transition-fast,
+    transform v.$transition-fast;
+
+  @include v.focus-ring;
+
+  &:hover:not(:disabled) {
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:not(:disabled):active {
+    transform: scale(0.97);
+  }
+}
+
+.actionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.actionLabel {
+  @media (max-width: 720px) {
+    display: none;
+  }
+}
+
+.actionLogout {
+  &:hover:not(:disabled) {
+    color: #dc2626;
+    background: color-mix(in srgb, #dc2626 12%, transparent);
+  }
+
+  [data-theme='dark'] &:hover:not(:disabled) {
+    color: #f87171;
+    background: color-mix(in srgb, #f87171 14%, transparent);
+  }
+}

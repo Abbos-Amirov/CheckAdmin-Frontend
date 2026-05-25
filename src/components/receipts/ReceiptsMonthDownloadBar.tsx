@@ -16,6 +16,7 @@ import {
   type ReceiptAmountExport,
   type ReceiptEmployeeGroup,
 } from '@/utils/downloadReceiptsExcel';
+import { downloadReceiptsExcelWithImages } from '@/utils/downloadReceiptsExcelWithImages';
 import styles from './ReceiptsMonthDownloadBar.module.scss';
 
 type Props = {
@@ -80,6 +81,13 @@ export function ReceiptsMonthDownloadBar({
     grandTotal: t('receiptExcelGrandTotal'),
   };
 
+  const excelImageLabels = {
+    employeeName: t('receiptExcelColEmployee'),
+    receiptImage: t('receiptExcelColImage'),
+    amount: t('receiptExcelColAmount'),
+    grandTotal: t('receiptExcelGrandTotal'),
+  };
+
   const run = async (kind: 'png' | 'pdf' | 'xlsx', fn: () => void | Promise<void>) => {
     setBusy(kind);
     try {
@@ -92,6 +100,20 @@ export function ReceiptsMonthDownloadBar({
   };
 
   const handleExcelDownload = () => {
+    if (variant === 'worker' && singleEmployeeName) {
+      return downloadReceiptsExcelWithImages(
+        singleEmployeeName,
+        receipts.map((r) => ({
+          employeeName: r.employeeName,
+          amount: r.amount,
+          imageUrl: r.imageUrl,
+        })),
+        excelImageLabels,
+        formatAmount,
+        `${singleEmployeeName.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').slice(0, 40)}_receipts.xlsx`,
+      );
+    }
+
     if (singleEmployeeName || employeeGroups.length === 1) {
       const name = singleEmployeeName ?? employeeGroups[0].employeeName;
       const amounts =
