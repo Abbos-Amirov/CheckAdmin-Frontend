@@ -6,9 +6,11 @@ export type WorkplaceType = 'INTERNAL' | 'EXTERNAL';
 export interface Employee {
   id: string;
   fullName: string;
-  monthlyAmount: number;
+  employeeCode?: string;
+  phone?: string;
+  monthlyAmount?: number;
   status: EmployeeStatus;
   workplace: WorkplaceType;
-  /** Kvadrat avatar — `public/` dan, masalan `/avatars/abbos.png` */
+  /** Avatar URL — backend `/uploads/...` yoki `public/` */
   photoUrl: string;
 }

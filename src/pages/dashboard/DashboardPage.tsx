@@ -3,6 +3,8 @@ import type { MouseEvent } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { useReceipts } from '@/app/providers/ReceiptsProvider';
 import { mockDashboardMeta, mockDashboardStats, mockEmployees } from '@/data/mockDashboard';
+import { useAdminChecks } from '@/hooks/useAdminChecks';
+import { useAdminCheckCountsByMonth } from '@/hooks/useAdminCheckCountsByMonth';
 import { useMealBudgets } from '@/hooks/useMealBudgets';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
 import { EmployeeProgressCard } from '@/components/dashboard/EmployeeProgressCard';
@@ -13,7 +15,6 @@ import { formatCompactMonthlySum, formatCurrency } from '@/utils/format';
 import {
   DEMO_CALENDAR_DEFAULT_YEAR,
   DEMO_RECEIPTS_MONTH,
-  receiptInYearMonth,
 } from '@/utils/receiptMonthFilter';
 import styles from './DashboardPage.module.scss';
 
@@ -25,7 +26,7 @@ type PayrollEditorState = {
 };
 
 export function DashboardPage() {
-  const { receipts, approveReceipt, rejectReceipt } = useReceipts();
+  const { receipts: mockReceipts } = useReceipts();
   const { t, locale } = useI18n();
   const [selectedYear, setSelectedYear] = useState(DEMO_CALENDAR_DEFAULT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState(DEMO_RECEIPTS_MONTH);
@@ -36,27 +37,22 @@ export function DashboardPage() {
     internalBudget,
     externalBudget,
     saving,
+    error: loadError,
     saveBudget,
+    reload,
   } = useMealBudgets(selectedYear, selectedMonth);
 
-  const countsByMonth = useMemo(() => {
-    const arr = Array.from({ length: 12 }, () => 0);
-    for (const r of receipts) {
-      const d = new Date(r.createdAt);
-      if (d.getUTCFullYear() === selectedYear) {
-        arr[d.getUTCMonth()] += 1;
-      }
-    }
-    return arr;
-  }, [receipts, selectedYear]);
+  const {
+    receipts: periodReceipts,
+    loading: checksLoading,
+    error: checksLoadError,
+    actionError: checksActionError,
+    approveReceipt,
+    rejectReceipt,
+    reload: reloadChecks,
+  } = useAdminChecks(selectedYear, selectedMonth);
 
-  const periodReceipts = useMemo(
-    () =>
-      receipts.filter((r) =>
-        receiptInYearMonth(r.createdAt, selectedYear, selectedMonth),
-      ),
-    [receipts, selectedYear, selectedMonth],
-  );
+  const { countsByMonth } = useAdminCheckCountsByMonth(selectedYear);
 
   const pendingCount = useMemo(
     () => periodReceipts.filter((r) => r.status === 'PENDING').length,
@@ -95,8 +91,8 @@ export function DashboardPage() {
     try {
       await saveBudget(payrollEditor.kind, amount);
       closePayrollEditor();
-    } catch {
-      setSaveError(t('mealBudgetSaveError'));
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : t('mealBudgetSaveError'));
     }
   };
 
@@ -126,6 +122,30 @@ export function DashboardPage() {
         countsByMonth={countsByMonth}
       />
 
+      {loadError ? (
+        <div className={styles.apiError} role="alert">
+          <p>{loadError}</p>
+          <button type="button" className={styles.retryBtn} onClick={() => void reload()}>
+            {t('retry')}
+          </button>
+        </div>
+      ) : null}
+
+      {checksLoadError ? (
+        <div className={styles.apiError} role="alert">
+          <p>{checksLoadError}</p>
+          <button type="button" className={styles.retryBtn} onClick={() => void reloadChecks()}>
+            {t('retry')}
+          </button>
+        </div>
+      ) : null}
+
+      {checksActionError ? (
+        <div className={styles.apiError} role="alert">
+          <p>{checksActionError}</p>
+        </div>
+      ) : null}
+
       <section className={styles.stats} aria-label={t('dashboard')}>
         <StatCard
           label={t('totalEmployees')}
@@ -142,12 +162,12 @@ export function DashboardPage() {
         />
         <StatCard
           label={t('monthlyTotal')}
-          value={`${formatCompactMonthlySum(periodTotal || mockDashboardStats.monthlyTotal, locale)}`}
+          value={`${formatCompactMonthlySum(periodTotal, locale)}`}
           hint={t('currency')}
         />
         <StatCard
           label={t('approved')}
-          value={approvedCount || mockDashboardStats.approvedReports}
+          value={approvedCount}
           hint={t('reportsSent')}
           tone="success"
         />
@@ -181,20 +201,21 @@ export function DashboardPage() {
       <section className={styles.grid}>
         <EmployeeProgressCard
           employees={mockEmployees}
-          receipts={receipts}
+          receipts={mockReceipts}
           year={selectedYear}
           month={selectedMonth}
           internalBudget={internalBudget}
           externalBudget={externalBudget}
         />
         <PendingReceiptsCard
-          receipts={receipts}
+          receipts={periodReceipts}
           year={selectedYear}
           month={selectedMonth}
           payrollDisbursedInternal={internalBudget}
           payrollDisbursedExternal={externalBudget}
-          onApprove={approveReceipt}
-          onReject={rejectReceipt}
+          loading={checksLoading}
+          onApprove={(id) => void approveReceipt(id)}
+          onReject={(id) => void rejectReceipt(id)}
         />
       </section>
     </div>

@@ -212,6 +212,43 @@
   font-weight: 800;
 }
 
+.statClickable {
+  border-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 6%, rgba(0, 0, 0, 0.02));
+
+  [data-theme='dark'] & {
+    background: color-mix(in srgb, var(--color-accent) 10%, rgba(255, 255, 255, 0.04));
+  }
+}
+
+.allocationBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s ease;
+
+  @include v.focus-ring;
+
+  &:hover {
+    color: var(--color-accent);
+  }
+
+  &::after {
+    content: '✎';
+    font-size: 0.75rem;
+    opacity: 0.65;
+  }
+}
+
 .actions {
   display: flex;
   gap: 10px;

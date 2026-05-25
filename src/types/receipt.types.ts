@@ -1,3 +1,5 @@
+import type { WorkplaceType } from '@/types/employee.types';
+
 export type ReceiptStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface ReceiptLineItem {
@@ -30,6 +32,11 @@ export interface Receipt {
   imageUrl: string;
   status: ReceiptStatus;
   createdAt: string;
+  /** Backend oy kaliti, masalan: 2026-05 */
+  month?: string;
   lineItems: ReceiptLineItem[];
   payment: ReceiptPayment;
+  employeeWorkplace?: WorkplaceType;
+  employeePhotoUrl?: string;
+  employeeCode?: string;
 }

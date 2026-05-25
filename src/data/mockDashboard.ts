@@ -108,7 +108,3 @@ export const mockEmployees: Employee[] = [
     photoUrl: '/avatars/otabek.png',
   },
 ];
-
-export function getEmployeeById(id: string): Employee | undefined {
-  return mockEmployees.find((e) => e.id === id);
-}

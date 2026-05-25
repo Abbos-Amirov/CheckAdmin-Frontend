@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { getEmployeeById } from '@/data/mockDashboard';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { useReceipts } from '@/app/providers/ReceiptsProvider';
+import { useEmployees } from '@/hooks/useEmployees';
 import { formatCalendarMonth, formatCurrency, formatDashboardMonth } from '@/utils/format';
 import { receiptScanImageUrl } from '@/data/receiptScanAssets';
 import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDownloadBar';
@@ -18,17 +18,19 @@ export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
   const { t, locale } = useI18n();
   const { receipts } = useReceipts();
+  const { getEmployeeById, loading, error, reload } = useEmployees();
   const [selectedMonth, setSelectedMonth] = useState(5);
 
-  if (!employeeId) {
-    return <Navigate to="/employees" replace />;
-  }
-
-  const emp = getEmployeeById(employeeId);
+  const emp = employeeId ? getEmployeeById(employeeId) : undefined;
 
   const employeeReceipts = useMemo(
-    () => receipts.filter((r) => r.employeeId === employeeId),
-    [receipts, employeeId],
+    () =>
+      employeeId
+        ? receipts.filter(
+            (r) => r.employeeId === employeeId || r.employeeName === emp?.fullName,
+          )
+        : [],
+    [receipts, employeeId, emp?.fullName],
   );
 
   const statsByMonth = useMemo(() => {
@@ -63,6 +65,29 @@ export function EmployeeDetailPage() {
     [selectedMonth],
   );
 
+  if (!employeeId) {
+    return <Navigate to="/employees" replace />;
+  }
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <p className={styles.missing}>{t('loading')}</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.page}>
+        <p className={styles.missing}>{error}</p>
+        <button type="button" className={styles.back} onClick={() => void reload()}>
+          {t('retry')}
+        </button>
+      </div>
+    );
+  }
+
   if (!emp) {
     return (
       <div className={styles.page}>
@@ -75,6 +100,7 @@ export function EmployeeDetailPage() {
   }
 
   const isInternal = emp.workplace === 'INTERNAL';
+  const initial = emp.fullName.trim().charAt(0).toUpperCase() || '?';
 
   return (
     <div className={styles.page}>
@@ -86,19 +112,35 @@ export function EmployeeDetailPage() {
         <div className={styles.layout}>
           <div className={styles.photoCol}>
             <div className={styles.photoFrame}>
-              <img
-                className={styles.photo}
-                src={emp.photoUrl}
-                alt={emp.fullName}
-                width={400}
-                height={400}
-              />
+              {emp.photoUrl ? (
+                <img
+                  className={styles.photo}
+                  src={emp.photoUrl}
+                  alt={emp.fullName}
+                  width={400}
+                  height={400}
+                />
+              ) : (
+                <div className={styles.photoFallback} aria-hidden>
+                  {initial}
+                </div>
+              )}
             </div>
           </div>
           <div className={styles.info}>
             <h2 className={styles.name}>{emp.fullName}</h2>
 
             <dl className={styles.dl}>
+              <div className={styles.row}>
+                <dt>{t('authEmployeeIdLabel')}</dt>
+                <dd>{emp.employeeCode ?? '—'}</dd>
+              </div>
+              {emp.phone ? (
+                <div className={styles.row}>
+                  <dt>{t('employeesPhoneLabel')}</dt>
+                  <dd>{emp.phone}</dd>
+                </div>
+              ) : null}
               <div className={styles.row}>
                 <dt>{t('workplaceColumn')}</dt>
                 <dd>
@@ -110,22 +152,10 @@ export function EmployeeDetailPage() {
                 </dd>
               </div>
               <div className={styles.row}>
-                <dt>{t('employeeDetailMonthly')}</dt>
-                <dd className={styles.amount}>
-                  {formatCurrency(emp.monthlyAmount, locale)} {t('currency')}
-                </dd>
-              </div>
-              <div className={styles.row}>
                 <dt>{t('employeesStatus')}</dt>
                 <dd>
-                  <span
-                    className={`${styles.st} ${
-                      emp.status === 'ACTIVE' ? styles.stOk : styles.stOff
-                    }`}
-                  >
-                    {emp.status === 'ACTIVE'
-                      ? t('statusActiveLabel')
-                      : t('statusInactiveLabel')}
+                  <span className={`${styles.st} ${styles.stOk}`}>
+                    {t('statusActiveLabel')}
                   </span>
                 </dd>
               </div>

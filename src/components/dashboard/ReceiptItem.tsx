@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
 import type { WorkplaceType } from '@/types/employee.types';
 import type { Receipt } from '@/types/receipt.types';
@@ -15,6 +16,7 @@ type Props = {
   employeeInitial: string;
   onApprove: () => void;
   onReject: () => void;
+  onAllocationClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 };
 
 export function ReceiptItem({
@@ -26,9 +28,15 @@ export function ReceiptItem({
   employeeInitial,
   onApprove,
   onReject,
+  onAllocationClick,
 }: Props) {
   const { t, locale } = useI18n();
   const isInternal = workplace === 'INTERNAL';
+
+  const allocationLabel =
+    monthlyAllocation === null
+      ? t('mealBudgetNotSet')
+      : `${formatCurrency(monthlyAllocation, locale)} ${t('currency')}`;
 
   return (
     <div className={styles.row}>
@@ -69,12 +77,21 @@ export function ReceiptItem({
               {formatCurrency(monthReceiptsTotal, locale)} {t('currency')}
             </dd>
           </div>
-          <div className={styles.stat}>
+          <div className={`${styles.stat} ${onAllocationClick ? styles.statClickable : ''}`.trim()}>
             <dt>{t('receiptMonthlyAllocation')}</dt>
             <dd className={styles.statAllocation}>
-              {monthlyAllocation === null
-                ? t('mealBudgetNotSet')
-                : `${formatCurrency(monthlyAllocation, locale)} ${t('currency')}`}
+              {onAllocationClick ? (
+                <button
+                  type="button"
+                  className={styles.allocationBtn}
+                  onClick={onAllocationClick}
+                  aria-label={t('employeeAllowanceEditAria')}
+                >
+                  {allocationLabel}
+                </button>
+              ) : (
+                allocationLabel
+              )}
             </dd>
           </div>
         </dl>

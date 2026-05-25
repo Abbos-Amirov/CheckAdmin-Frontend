@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMealBudgets, saveMealBudget } from '@/api/mealBudgets';
 import { useAuth } from '@/app/providers/AuthProvider';
+import { useI18n } from '@/app/providers/I18nProvider';
 import { ApiError } from '@/api/client';
 import type { MealBudgetGroupType } from '@/types/mealBudget.types';
 
@@ -12,11 +13,25 @@ function groupTypeForKind(kind: MealBudgetKind): MealBudgetGroupType {
 
 export function useMealBudgets(year: number, month: number) {
   const { token } = useAuth();
+  const { t } = useI18n();
   const [internalBudget, setInternalBudget] = useState<number | null>(null);
   const [externalBudget, setExternalBudget] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resolveErrorMessage = useCallback(
+    (err: unknown, fallbackKey: 'mealBudgetLoadError' | 'mealBudgetSaveError') => {
+      if (err instanceof ApiError && err.status === 0) {
+        return t('mealBudgetBackendOffline');
+      }
+      if (err instanceof ApiError && err.message !== 'NETWORK_ERROR') {
+        return err.message;
+      }
+      return t(fallbackKey);
+    },
+    [t],
+  );
 
   const load = useCallback(async () => {
     if (!token) {
@@ -33,11 +48,11 @@ export function useMealBudgets(year: number, month: number) {
       setExternalBudget(data.outsideFactory?.totalBudget ?? null);
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load meal budgets');
+      setError(resolveErrorMessage(err, 'mealBudgetLoadError'));
     } finally {
       setLoading(false);
     }
-  }, [token, year, month]);
+  }, [token, year, month, resolveErrorMessage]);
 
   useEffect(() => {
     void load();
@@ -67,11 +82,15 @@ export function useMealBudgets(year: number, month: number) {
           setExternalBudget(saved.totalBudget);
         }
         setError(null);
+      } catch (err) {
+        const message = resolveErrorMessage(err, 'mealBudgetSaveError');
+        setError(message);
+        throw new Error(message);
       } finally {
         setSaving(false);
       }
     },
-    [token, year, month],
+    [token, year, month, resolveErrorMessage],
   );
 
   return {

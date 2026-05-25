@@ -84,3 +84,18 @@
   color: var(--color-text-muted);
   font-size: 0.9375rem;
 }
+
+.inlineError {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, #dc2626 28%, var(--color-border));
+  background: color-mix(in srgb, #dc2626 8%, var(--color-bg-elevated));
+  color: #b91c1c;
+  font-size: 0.8125rem;
+  font-weight: 600;
+
+  [data-theme='dark'] & {
+    color: #fca5a5;
+  }
+}

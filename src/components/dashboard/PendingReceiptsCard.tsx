@@ -1,12 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import type { MouseEvent } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
 import type { Locale } from '@/i18n';
-import { mockEmployees } from '@/data/mockDashboard';
+import { useEmployeeMealAllowances } from '@/hooks/useEmployeeMealAllowances';
 import type { Receipt } from '@/types/receipt.types';
 import type { WorkplaceType } from '@/types/employee.types';
 import { receiptInYearMonth } from '@/utils/receiptMonthFilter';
 import { formatCurrency } from '@/utils/format';
+import { resolveEmployeeForReceipt } from '@/utils/employeeAllowance';
 import { Card } from '@/components/common/Card';
+import { EmployeeAllowancePopover } from '@/components/dashboard/EmployeeAllowancePopover';
 import { ReceiptItem } from '@/components/dashboard/ReceiptItem';
 import styles from './PendingReceiptsCard.module.scss';
 
@@ -16,8 +19,19 @@ type Props = {
   month: number;
   payrollDisbursedInternal: number | null;
   payrollDisbursedExternal: number | null;
+  loading?: boolean;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+};
+
+type AllowanceEditorState = {
+  mongoId: string;
+  employeeName: string;
+  groupType: 'INSIDE_FACTORY' | 'OUTSIDE_FACTORY';
+  baseAmount: number;
+  extraAmount: number;
+  reason: string;
+  anchorRect: DOMRect;
 };
 
 function employeeMonthReceiptsTotal(
@@ -67,27 +81,29 @@ export function PendingReceiptsCard({
   month,
   payrollDisbursedInternal,
   payrollDisbursedExternal,
+  loading = false,
   onApprove,
   onReject,
 }: Props) {
   const { t, locale } = useI18n();
+  const [editor, setEditor] = useState<AllowanceEditorState | null>(null);
+  const [saveError, setSaveError] = useState('');
 
-  const byId = useMemo(
-    () => new Map(mockEmployees.map((e) => [e.id, e])),
-    [],
-  );
+  const {
+    allowanceMap,
+    users,
+    saving,
+    saveAllowance,
+  } = useEmployeeMealAllowances(year, month);
 
-  const pending = receipts.filter(
-    (r) =>
-      r.status === 'PENDING' && receiptInYearMonth(r.createdAt, year, month),
-  );
+  const pending = receipts.filter((r) => r.status === 'PENDING');
 
   const { internalList, externalList } = useMemo(() => {
     const internal: Receipt[] = [];
     const external: Receipt[] = [];
     for (const r of pending) {
-      const emp = byId.get(r.employeeId);
-      const wp: WorkplaceType = emp?.workplace ?? 'EXTERNAL';
+      const resolved = resolveEmployeeForReceipt(r, users);
+      const wp: WorkplaceType = resolved?.workplace ?? r.employeeWorkplace ?? 'EXTERNAL';
       if (wp === 'INTERNAL') internal.push(r);
       else external.push(r);
     }
@@ -95,13 +111,64 @@ export function PendingReceiptsCard({
       internalList: onePendingReceiptPerEmployee(internal),
       externalList: onePendingReceiptPerEmployee(external),
     };
-  }, [pending, byId]);
+  }, [pending, users]);
+
+  const openAllowanceEditor = (
+    receipt: Receipt,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => {
+    const resolved = resolveEmployeeForReceipt(receipt, users);
+    if (!resolved) {
+      setSaveError(t('employeeAllowanceUnresolved'));
+      return;
+    }
+
+    const allowance = allowanceMap.get(resolved.mongoId);
+    setSaveError('');
+    setEditor({
+      mongoId: resolved.mongoId,
+      employeeName: resolved.employeeName,
+      groupType: resolved.groupType,
+      baseAmount: allowance?.baseAmount ?? 0,
+      extraAmount: allowance?.extraAmount ?? 0,
+      reason: allowance?.reason ?? '',
+      anchorRect: event.currentTarget.getBoundingClientRect(),
+    });
+  };
+
+  const closeAllowanceEditor = () => {
+    setSaveError('');
+    setEditor(null);
+  };
+
+  const handleSaveAllowance = async (payload: {
+    baseAmount: number;
+    extraAmount: number;
+    reason: string;
+  }) => {
+    if (!editor) return;
+
+    try {
+      await saveAllowance({
+        employeeId: editor.mongoId,
+        employeeName: editor.employeeName,
+        year,
+        month,
+        groupType: editor.groupType,
+        baseAmount: payload.baseAmount,
+        extraAmount: payload.extraAmount,
+        reason: payload.reason || undefined,
+      });
+      closeAllowanceEditor();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : t('employeeAllowanceSaveError'));
+    }
+  };
 
   const renderSection = (
     titleKey: 'payrollInternal' | 'payrollExternal',
     groupBudget: number | null,
     list: Receipt[],
-    employeeAllocation: number | null,
   ) => (
     <div className={styles.section}>
       <div className={styles.sectionHead}>
@@ -116,15 +183,16 @@ export function PendingReceiptsCard({
       ) : (
         <ul className={styles.groupList}>
           {list.map((receipt) => {
-            const emp = byId.get(receipt.employeeId);
-            const workplace = emp?.workplace ?? 'EXTERNAL';
+            const resolved = resolveEmployeeForReceipt(receipt, users);
+            const workplace = resolved?.workplace ?? receipt.employeeWorkplace ?? 'EXTERNAL';
+            const allowance = resolved ? allowanceMap.get(resolved.mongoId) : undefined;
             const monthReceiptsTotal = employeeMonthReceiptsTotal(
               receipts,
               receipt.employeeId,
               year,
               month,
             );
-            const photoUrl = emp?.photoUrl ?? '';
+            const photoUrl = resolved?.avatarUrl ?? receipt.employeePhotoUrl ?? '';
             const initial = receipt.employeeName.trim().charAt(0).toUpperCase() || '?';
 
             return (
@@ -132,12 +200,17 @@ export function PendingReceiptsCard({
                 <ReceiptItem
                   receipt={receipt}
                   workplace={workplace}
-                  monthlyAllocation={employeeAllocation}
+                  monthlyAllocation={allowance?.totalAmount ?? null}
                   monthReceiptsTotal={monthReceiptsTotal}
                   employeePhotoUrl={photoUrl}
                   employeeInitial={initial}
                   onApprove={() => onApprove(receipt.id)}
                   onReject={() => onReject(receipt.id)}
+                  onAllocationClick={
+                    resolved
+                      ? (event) => openAllowanceEditor(receipt, event)
+                      : undefined
+                  }
                 />
               </li>
             );
@@ -153,24 +226,35 @@ export function PendingReceiptsCard({
         <h2 className={styles.title}>{t('pendingReceipts')}</h2>
       </div>
 
-      {pending.length === 0 ? (
+      {saveError && !editor ? (
+        <p className={styles.inlineError} role="alert">
+          {saveError}
+        </p>
+      ) : null}
+
+      {loading ? (
+        <p className={styles.empty}>{t('loading')}</p>
+      ) : pending.length === 0 ? (
         <p className={styles.empty}>{t('noPending')}</p>
       ) : (
         <div className={styles.groups}>
-          {renderSection(
-            'payrollInternal',
-            payrollDisbursedInternal,
-            internalList,
-            payrollDisbursedInternal,
-          )}
-          {renderSection(
-            'payrollExternal',
-            payrollDisbursedExternal,
-            externalList,
-            payrollDisbursedExternal,
-          )}
+          {renderSection('payrollInternal', payrollDisbursedInternal, internalList)}
+          {renderSection('payrollExternal', payrollDisbursedExternal, externalList)}
         </div>
       )}
+
+      <EmployeeAllowancePopover
+        open={editor !== null}
+        anchorRect={editor?.anchorRect ?? null}
+        employeeName={editor?.employeeName ?? ''}
+        initialBaseAmount={editor?.baseAmount ?? 0}
+        initialExtraAmount={editor?.extraAmount ?? 0}
+        initialReason={editor?.reason ?? ''}
+        saving={saving}
+        saveError={saveError}
+        onSave={handleSaveAllowance}
+        onClose={closeAllowanceEditor}
+      />
     </Card>
   );
 }
