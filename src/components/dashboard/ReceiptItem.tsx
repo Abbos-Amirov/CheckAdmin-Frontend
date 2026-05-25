@@ -8,7 +8,7 @@ import styles from './ReceiptItem.module.scss';
 type Props = {
   receipt: Receipt;
   workplace: WorkplaceType;
-  monthlyAllocation: number;
+  monthlyAllocation: number | null;
   /** Shu oy (demo) barcha cheklar summasi — ishchi bo‘yicha. */
   monthReceiptsTotal: number;
   employeePhotoUrl: string;
@@ -72,7 +72,9 @@ export function ReceiptItem({
           <div className={styles.stat}>
             <dt>{t('receiptMonthlyAllocation')}</dt>
             <dd className={styles.statAllocation}>
-              {formatCurrency(monthlyAllocation, locale)} {t('currency')}
+              {monthlyAllocation === null
+                ? t('mealBudgetNotSet')
+                : `${formatCurrency(monthlyAllocation, locale)} ${t('currency')}`}
             </dd>
           </div>
         </dl>

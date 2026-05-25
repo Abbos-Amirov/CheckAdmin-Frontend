@@ -2,13 +2,8 @@ import { useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { useReceipts } from '@/app/providers/ReceiptsProvider';
-import {
-  DEFAULT_PAYROLL_DISBURSED_EXTERNAL_WON,
-  DEFAULT_PAYROLL_DISBURSED_INTERNAL_WON,
-  mockDashboardMeta,
-  mockDashboardStats,
-  mockEmployees,
-} from '@/data/mockDashboard';
+import { mockDashboardMeta, mockDashboardStats, mockEmployees } from '@/data/mockDashboard';
+import { useMealBudgets } from '@/hooks/useMealBudgets';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
 import { EmployeeProgressCard } from '@/components/dashboard/EmployeeProgressCard';
 import { PayrollDisbursementPopover } from '@/components/dashboard/PayrollDisbursementPopover';
@@ -20,13 +15,7 @@ import {
   DEMO_RECEIPTS_MONTH,
   receiptInYearMonth,
 } from '@/utils/receiptMonthFilter';
-import { payrollPeriodKey } from '@/utils/payrollDisbursement';
 import styles from './DashboardPage.module.scss';
-
-type PayrollDisbursementByPeriod = Record<
-  string,
-  { internal: number; external: number }
->;
 
 type PayrollEditorKind = 'internal' | 'external';
 
@@ -40,8 +29,15 @@ export function DashboardPage() {
   const { t, locale } = useI18n();
   const [selectedYear, setSelectedYear] = useState(DEMO_CALENDAR_DEFAULT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState(DEMO_RECEIPTS_MONTH);
-  const [payrollByPeriod, setPayrollByPeriod] = useState<PayrollDisbursementByPeriod>({});
   const [payrollEditor, setPayrollEditor] = useState<PayrollEditorState | null>(null);
+  const [saveError, setSaveError] = useState('');
+
+  const {
+    internalBudget,
+    externalBudget,
+    saving,
+    saveBudget,
+  } = useMealBudgets(selectedYear, selectedMonth);
 
   const countsByMonth = useMemo(() => {
     const arr = Array.from({ length: 12 }, () => 0);
@@ -77,49 +73,31 @@ export function DashboardPage() {
     [periodReceipts],
   );
 
-  const periodKey = payrollPeriodKey(selectedYear, selectedMonth);
-
-  const payrollDisbursedInternal = useMemo(
-    () =>
-      payrollByPeriod[periodKey]?.internal ?? DEFAULT_PAYROLL_DISBURSED_INTERNAL_WON,
-    [payrollByPeriod, periodKey],
-  );
-
-  const payrollDisbursedExternal = useMemo(
-    () =>
-      payrollByPeriod[periodKey]?.external ?? DEFAULT_PAYROLL_DISBURSED_EXTERNAL_WON,
-    [payrollByPeriod, periodKey],
-  );
-
   const openPayrollEditor = (
     kind: PayrollEditorKind,
     event: MouseEvent<HTMLButtonElement>,
   ) => {
+    setSaveError('');
     setPayrollEditor({
       kind,
       anchorRect: event.currentTarget.getBoundingClientRect(),
     });
   };
 
-  const closePayrollEditor = () => setPayrollEditor(null);
+  const closePayrollEditor = () => {
+    setSaveError('');
+    setPayrollEditor(null);
+  };
 
-  const savePayrollDisbursement = (amount: number) => {
+  const savePayrollDisbursement = async (amount: number) => {
     if (!payrollEditor) return;
 
-    setPayrollByPeriod((prev) => ({
-      ...prev,
-      [periodKey]: {
-        internal:
-          payrollEditor.kind === 'internal'
-            ? amount
-            : (prev[periodKey]?.internal ?? DEFAULT_PAYROLL_DISBURSED_INTERNAL_WON),
-        external:
-          payrollEditor.kind === 'external'
-            ? amount
-            : (prev[periodKey]?.external ?? DEFAULT_PAYROLL_DISBURSED_EXTERNAL_WON),
-      },
-    }));
-    closePayrollEditor();
+    try {
+      await saveBudget(payrollEditor.kind, amount);
+      closePayrollEditor();
+    } catch {
+      setSaveError(t('mealBudgetSaveError'));
+    }
   };
 
   const payrollEditorLabel =
@@ -127,10 +105,15 @@ export function DashboardPage() {
 
   const payrollEditorInitialValue =
     payrollEditor?.kind === 'internal'
-      ? payrollDisbursedInternal
+      ? internalBudget
       : payrollEditor?.kind === 'external'
-        ? payrollDisbursedExternal
-        : DEFAULT_PAYROLL_DISBURSED_INTERNAL_WON;
+        ? externalBudget
+        : null;
+
+  const formatBudgetValue = (amount: number | null) =>
+    amount === null
+      ? t('mealBudgetNotSet')
+      : `${formatCurrency(amount, locale)}`;
 
   return (
     <div className={styles.page}>
@@ -170,14 +153,14 @@ export function DashboardPage() {
         />
         <StatCard
           label={t('payrollInternal')}
-          value={`${formatCurrency(payrollDisbursedInternal, locale)}`}
+          value={formatBudgetValue(internalBudget)}
           hint={`${t('payrollMonthHint')} · ${t('currency')}`}
           onClick={(event) => openPayrollEditor('internal', event)}
           clickAriaLabel={t('payrollDisbursementEditAria', { label: t('payrollInternal') })}
         />
         <StatCard
           label={t('payrollExternal')}
-          value={`${formatCurrency(payrollDisbursedExternal, locale)}`}
+          value={formatBudgetValue(externalBudget)}
           hint={`${t('payrollMonthHint')} · ${t('currency')}`}
           onClick={(event) => openPayrollEditor('external', event)}
           clickAriaLabel={t('payrollDisbursementEditAria', { label: t('payrollExternal') })}
@@ -189,6 +172,8 @@ export function DashboardPage() {
         anchorRect={payrollEditor?.anchorRect ?? null}
         label={payrollEditorLabel}
         initialValue={payrollEditorInitialValue}
+        saving={saving}
+        saveError={saveError}
         onSave={savePayrollDisbursement}
         onClose={closePayrollEditor}
       />
@@ -199,13 +184,15 @@ export function DashboardPage() {
           receipts={receipts}
           year={selectedYear}
           month={selectedMonth}
+          internalBudget={internalBudget}
+          externalBudget={externalBudget}
         />
         <PendingReceiptsCard
           receipts={receipts}
           year={selectedYear}
           month={selectedMonth}
-          payrollDisbursedInternal={payrollDisbursedInternal}
-          payrollDisbursedExternal={payrollDisbursedExternal}
+          payrollDisbursedInternal={internalBudget}
+          payrollDisbursedExternal={externalBudget}
           onApprove={approveReceipt}
           onReject={rejectReceipt}
         />

@@ -32,6 +32,8 @@ export const ko: Record<TranslationKey, string> = {
   payrollDisbursementCancel: '취소',
   payrollDisbursementInvalid: '잘못된 금액입니다. 숫자만 입력하세요.',
   payrollDisbursementEditAria: '{{label}} 금액 수정',
+  mealBudgetNotSet: '아직 설정되지 않음',
+  mealBudgetSaveError: '한도를 저장하지 못했습니다. 다시 시도하세요.',
   workplaceColumn: '근무 구분',
   workplaceInternalShort: '사내',
   workplaceExternalShort: '사외',

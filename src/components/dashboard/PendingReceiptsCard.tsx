@@ -1,10 +1,7 @@
 import { useMemo } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
-import {
-  EMPLOYEE_MONTHLY_ALLOCATION_EXTERNAL_WON,
-  EMPLOYEE_MONTHLY_ALLOCATION_INTERNAL_WON,
-  mockEmployees,
-} from '@/data/mockDashboard';
+import type { Locale } from '@/i18n';
+import { mockEmployees } from '@/data/mockDashboard';
 import type { Receipt } from '@/types/receipt.types';
 import type { WorkplaceType } from '@/types/employee.types';
 import { receiptInYearMonth } from '@/utils/receiptMonthFilter';
@@ -17,8 +14,8 @@ type Props = {
   receipts: Receipt[];
   year: number;
   month: number;
-  payrollDisbursedInternal: number;
-  payrollDisbursedExternal: number;
+  payrollDisbursedInternal: number | null;
+  payrollDisbursedExternal: number | null;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
 };
@@ -52,6 +49,16 @@ function onePendingReceiptPerEmployee(list: Receipt[]): Receipt[] {
   return [...byEmployee.values()].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
+}
+
+function formatBudgetLabel(
+  amount: number | null,
+  locale: Locale,
+  currencyLabel: string,
+  notSetLabel: string,
+) {
+  if (amount === null) return notSetLabel;
+  return `${formatCurrency(amount, locale)} ${currencyLabel}`;
 }
 
 export function PendingReceiptsCard({
@@ -92,15 +99,16 @@ export function PendingReceiptsCard({
 
   const renderSection = (
     titleKey: 'payrollInternal' | 'payrollExternal',
-    groupBudget: number,
+    groupBudget: number | null,
     list: Receipt[],
-    monthlyAllocation: number,
+    employeeAllocation: number | null,
   ) => (
     <div className={styles.section}>
       <div className={styles.sectionHead}>
         <h3 className={styles.sectionTitle}>{t(titleKey)}</h3>
         <p className={styles.sectionBudget}>
-          {t('pendingGroupBudget')}: {formatCurrency(groupBudget, locale)} {t('currency')}
+          {t('pendingGroupBudget')}:{' '}
+          {formatBudgetLabel(groupBudget, locale, t('currency'), t('mealBudgetNotSet'))}
         </p>
       </div>
       {list.length === 0 ? (
@@ -124,7 +132,7 @@ export function PendingReceiptsCard({
                 <ReceiptItem
                   receipt={receipt}
                   workplace={workplace}
-                  monthlyAllocation={monthlyAllocation}
+                  monthlyAllocation={employeeAllocation}
                   monthReceiptsTotal={monthReceiptsTotal}
                   employeePhotoUrl={photoUrl}
                   employeeInitial={initial}
@@ -153,13 +161,13 @@ export function PendingReceiptsCard({
             'payrollInternal',
             payrollDisbursedInternal,
             internalList,
-            EMPLOYEE_MONTHLY_ALLOCATION_INTERNAL_WON,
+            payrollDisbursedInternal,
           )}
           {renderSection(
             'payrollExternal',
             payrollDisbursedExternal,
             externalList,
-            EMPLOYEE_MONTHLY_ALLOCATION_EXTERNAL_WON,
+            payrollDisbursedExternal,
           )}
         </div>
       )}

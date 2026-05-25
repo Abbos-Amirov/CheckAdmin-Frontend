@@ -16,19 +16,35 @@ type Props = {
   receipts: Receipt[];
   year: number;
   month: number;
+  internalBudget?: number | null;
+  externalBudget?: number | null;
 };
 
-function payrollCap(emp: Employee): number {
-  return emp.workplace === 'INTERNAL' ? PAYROLL_CAP_INTERNAL_WON : PAYROLL_CAP_EXTERNAL_WON;
+function payrollCap(
+  emp: Employee,
+  internalBudget: number | null | undefined,
+  externalBudget: number | null | undefined,
+): number {
+  if (emp.workplace === 'INTERNAL') {
+    return internalBudget ?? PAYROLL_CAP_INTERNAL_WON;
+  }
+  return externalBudget ?? PAYROLL_CAP_EXTERNAL_WON;
 }
 
-export function EmployeeProgressCard({ employees, receipts, year, month }: Props) {
+export function EmployeeProgressCard({
+  employees,
+  receipts,
+  year,
+  month,
+  internalBudget,
+  externalBudget,
+}: Props) {
   const { t, locale } = useI18n();
 
   const rows = useMemo(
     () =>
       employees.map((emp) => {
-        const cap = payrollCap(emp);
+        const cap = payrollCap(emp, internalBudget, externalBudget);
         const spent = receipts
           .filter(
             (r) =>
@@ -45,7 +61,7 @@ export function EmployeeProgressCard({ employees, receipts, year, month }: Props
 
         return { emp, cap, spent, pctFill, labelLeftPct, barClass };
       }),
-    [employees, receipts, year, month],
+    [employees, receipts, year, month, internalBudget, externalBudget],
   );
 
   return (

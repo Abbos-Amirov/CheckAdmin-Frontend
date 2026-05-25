@@ -30,6 +30,8 @@ export const uz = {
   payrollDisbursementCancel: 'Bekor qilish',
   payrollDisbursementInvalid: 'Noto‘g‘ri summa. Faqat raqam kiriting.',
   payrollDisbursementEditAria: '{{label}} summasini tahrirlash',
+  mealBudgetNotSet: 'Hali belgilanmagan',
+  mealBudgetSaveError: 'Limitni saqlab bo‘lmadi. Qayta urinib ko‘ring.',
   workplaceColumn: 'Ish joyi',
   workplaceInternalShort: 'Ichki',
   workplaceExternalShort: 'Tashqi',

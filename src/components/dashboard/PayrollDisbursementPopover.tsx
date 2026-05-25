@@ -9,8 +9,10 @@ type Props = {
   open: boolean;
   anchorRect: DOMRect | null;
   label: string;
-  initialValue: number;
-  onSave: (amount: number) => void;
+  initialValue: number | null;
+  saving?: boolean;
+  saveError?: string;
+  onSave: (amount: number) => void | Promise<void>;
   onClose: () => void;
 };
 
@@ -47,6 +49,8 @@ export function PayrollDisbursementPopover({
   anchorRect,
   label,
   initialValue,
+  saving = false,
+  saveError = '',
   onSave,
   onClose,
 }: Props) {
@@ -59,7 +63,7 @@ export function PayrollDisbursementPopover({
 
   useEffect(() => {
     if (!open) return;
-    setValue(String(initialValue));
+    setValue(initialValue === null ? '' : String(initialValue));
     setError('');
   }, [open, initialValue]);
 
@@ -99,14 +103,16 @@ export function PayrollDisbursementPopover({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (saving) return;
+
     const parsed = parseWonAmountInput(value);
     if (parsed === null) {
       setError(t('payrollDisbursementInvalid'));
       return;
     }
-    onSave(parsed);
+    await onSave(parsed);
   };
 
   if (!open || !anchorRect) return null;
@@ -159,13 +165,18 @@ export function PayrollDisbursementPopover({
               {error}
             </p>
           ) : null}
+          {saveError ? (
+            <p className={styles.error} role="alert">
+              {saveError}
+            </p>
+          ) : null}
 
           <div className={styles.actions}>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               {t('payrollDisbursementCancel')}
             </Button>
-            <Button type="submit" variant="primary">
-              {t('payrollDisbursementSave')}
+            <Button type="submit" variant="primary" disabled={saving}>
+              {saving ? '…' : t('payrollDisbursementSave')}
             </Button>
           </div>
         </form>
