@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { approveAdminCheck, fetchAdminChecks, rejectAdminCheck } from '@/api/checks';
+import { fetchAdminChecks } from '@/api/checks';
+import { patchMonthlyReceiptStatus } from '@/api/receipts';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { ApiError } from '@/api/client';
@@ -13,9 +14,16 @@ export function useAdminChecks(year: number, month: number) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSaving, setActionSaving] = useState(false);
 
   const resolveErrorMessage = useCallback(
-    (err: unknown, fallbackKey: 'checksLoadError' | 'checksApproveError' | 'checksRejectError') => {
+    (
+      err: unknown,
+      fallbackKey:
+        | 'checksLoadError'
+        | 'checksMonthlyApproveError'
+        | 'checksMonthlyRejectError',
+    ) => {
       if (err instanceof ApiError && err.status === 0) {
         return t('checksBackendOffline');
       }
@@ -27,23 +35,29 @@ export function useAdminChecks(year: number, month: number) {
     [t],
   );
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (!token) {
       setReceipts([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!options?.silent) {
+      setLoading(true);
+    }
     try {
       const data = await fetchAdminChecks(year, month, token);
       setReceipts(data.checks.map(mapApiCheckToReceipt));
       setError(null);
     } catch (err) {
       setError(resolveErrorMessage(err, 'checksLoadError'));
-      setReceipts([]);
+      if (!options?.silent) {
+        setReceipts([]);
+      }
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   }, [token, year, month, resolveErrorMessage]);
 
@@ -51,36 +65,59 @@ export function useAdminChecks(year: number, month: number) {
     void load();
   }, [load]);
 
-  const approveReceipt = useCallback(
-    async (id: string) => {
+  const approveEmployeeMonth = useCallback(
+    async (employeeId: string) => {
       if (!token) return;
 
+      setActionSaving(true);
       try {
-        const updated = await approveAdminCheck(id, token);
-        const mapped = mapApiCheckToReceipt(updated);
-        setReceipts((prev) => prev.map((r) => (r.id === id ? mapped : r)));
+        await patchMonthlyReceiptStatus(
+          {
+            employeeId,
+            year,
+            month,
+            status: 'APPROVED',
+          },
+          token,
+        );
         setActionError(null);
+        await load({ silent: true });
       } catch (err) {
-        setActionError(resolveErrorMessage(err, 'checksApproveError'));
+        setActionError(resolveErrorMessage(err, 'checksMonthlyApproveError'));
+        throw err;
+      } finally {
+        setActionSaving(false);
       }
     },
-    [token, resolveErrorMessage],
+    [token, year, month, load, resolveErrorMessage],
   );
 
-  const rejectReceipt = useCallback(
-    async (id: string) => {
+  const rejectEmployeeMonth = useCallback(
+    async (employeeId: string, rejectReason: string) => {
       if (!token) return;
 
+      setActionSaving(true);
       try {
-        const updated = await rejectAdminCheck(id, token);
-        const mapped = mapApiCheckToReceipt(updated);
-        setReceipts((prev) => prev.map((r) => (r.id === id ? mapped : r)));
+        await patchMonthlyReceiptStatus(
+          {
+            employeeId,
+            year,
+            month,
+            status: 'REJECTED',
+            rejectReason,
+          },
+          token,
+        );
         setActionError(null);
+        await load({ silent: true });
       } catch (err) {
-        setActionError(resolveErrorMessage(err, 'checksRejectError'));
+        setActionError(resolveErrorMessage(err, 'checksMonthlyRejectError'));
+        throw err;
+      } finally {
+        setActionSaving(false);
       }
     },
-    [token, resolveErrorMessage],
+    [token, year, month, load, resolveErrorMessage],
   );
 
   return {
@@ -88,8 +125,9 @@ export function useAdminChecks(year: number, month: number) {
     loading,
     error,
     actionError,
-    approveReceipt,
-    rejectReceipt,
+    actionSaving,
+    approveEmployeeMonth,
+    rejectEmployeeMonth,
     reload: load,
   };
 }

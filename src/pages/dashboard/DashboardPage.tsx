@@ -46,8 +46,9 @@ export function DashboardPage() {
     loading: checksLoading,
     error: checksLoadError,
     actionError: checksActionError,
-    approveReceipt,
-    rejectReceipt,
+    actionSaving: checksActionSaving,
+    approveEmployeeMonth,
+    rejectEmployeeMonth,
     reload: reloadChecks,
   } = useAdminChecks(selectedYear, selectedMonth);
 
@@ -263,8 +264,9 @@ export function DashboardPage() {
           payrollDisbursedInternal={internalBudget}
           payrollDisbursedExternal={externalBudget}
           loading={checksLoading}
-          onApprove={(id) => void approveReceipt(id)}
-          onReject={(id) => void rejectReceipt(id)}
+          actionSaving={checksActionSaving}
+          onApproveEmployee={approveEmployeeMonth}
+          onRejectEmployee={rejectEmployeeMonth}
         />
       </section>
     </div>

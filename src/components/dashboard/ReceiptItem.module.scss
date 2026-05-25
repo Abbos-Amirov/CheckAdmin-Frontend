@@ -52,6 +52,38 @@
   }
 }
 
+.rowApproved {
+  border-color: color-mix(in srgb, var(--color-success) 55%, var(--color-border));
+  background: linear-gradient(
+    145deg,
+    rgba(45, 157, 95, 0.1) 0%,
+    rgba(45, 157, 95, 0.04) 100%
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-success) 18%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--color-success) 65%, var(--color-border));
+  }
+}
+
+.rowRejected {
+  border-color: color-mix(in srgb, #dc2626 45%, var(--color-border));
+  background: linear-gradient(
+    145deg,
+    rgba(220, 38, 38, 0.1) 0%,
+    rgba(220, 38, 38, 0.04) 100%
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #dc2626 16%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  &:hover {
+    border-color: color-mix(in srgb, #dc2626 55%, var(--color-border));
+  }
+}
+
 .avatarCol {
   flex-shrink: 0;
 
@@ -269,5 +301,23 @@
     min-height: 38px;
     padding: 0 14px;
     font-size: 0.8125rem;
+  }
+}
+
+.btnApprovedActive {
+  border-color: color-mix(in srgb, var(--color-success) 55%, var(--color-border)) !important;
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-bg-elevated)) !important;
+  color: var(--color-success) !important;
+  font-weight: 800;
+}
+
+.btnRejectedActive {
+  border-color: color-mix(in srgb, #dc2626 50%, var(--color-border)) !important;
+  background: color-mix(in srgb, #dc2626 12%, var(--color-bg-elevated)) !important;
+  color: #b91c1c !important;
+  font-weight: 800;
+
+  [data-theme='dark'] & {
+    color: #fca5a5 !important;
   }
 }

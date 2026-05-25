@@ -6,14 +6,19 @@ import { formatCurrency } from '@/utils/format';
 import { Button } from '@/components/common/Button';
 import styles from './ReceiptItem.module.scss';
 
+type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 type Props = {
   receipt: Receipt;
   workplace: WorkplaceType;
   monthlyAllocation: number | null;
-  /** Shu oy (demo) barcha cheklar summasi — ishchi bo‘yicha. */
   monthReceiptsTotal: number;
   employeePhotoUrl: string;
   employeeInitial: string;
+  reviewStatus?: ReviewStatus;
+  approveLabel?: string;
+  rejectLabel?: string;
+  actionsDisabled?: boolean;
   onApprove: () => void;
   onReject: () => void;
   onAllocationClick?: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -26,12 +31,27 @@ export function ReceiptItem({
   monthReceiptsTotal,
   employeePhotoUrl,
   employeeInitial,
+  reviewStatus = 'PENDING',
+  approveLabel,
+  rejectLabel,
+  actionsDisabled = false,
   onApprove,
   onReject,
   onAllocationClick,
 }: Props) {
   const { t, locale } = useI18n();
   const isInternal = workplace === 'INTERNAL';
+  const isApproved = reviewStatus === 'APPROVED';
+  const isRejected = reviewStatus === 'REJECTED';
+  const isReviewed = isApproved || isRejected;
+
+  const rowClass = [
+    styles.row,
+    isApproved ? styles.rowApproved : '',
+    isRejected ? styles.rowRejected : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const allocationLabel =
     monthlyAllocation === null
@@ -39,7 +59,7 @@ export function ReceiptItem({
       : `${formatCurrency(monthlyAllocation, locale)} ${t('currency')}`;
 
   return (
-    <div className={styles.row}>
+    <div className={rowClass}>
       <div className={styles.avatarCol}>
         {employeePhotoUrl ? (
           <img
@@ -97,11 +117,25 @@ export function ReceiptItem({
         </dl>
       </div>
       <div className={styles.actions}>
-        <Button variant="outline" type="button" onClick={onApprove}>
-          {t('approve')}
+        <Button
+          variant="outline"
+          type="button"
+          className={`${isApproved ? styles.btnApprovedActive : ''}`.trim()}
+          onClick={onApprove}
+          disabled={actionsDisabled || isReviewed}
+          aria-pressed={isApproved}
+        >
+          {isApproved ? t('pendingApprovedDone') : (approveLabel ?? t('approve'))}
         </Button>
-        <Button variant="outline" type="button" onClick={onReject}>
-          {t('reject')}
+        <Button
+          variant="outline"
+          type="button"
+          className={`${isRejected ? styles.btnRejectedActive : ''}`.trim()}
+          onClick={onReject}
+          disabled={actionsDisabled || isReviewed}
+          aria-pressed={isRejected}
+        >
+          {isRejected ? t('pendingRejectedDone') : (rejectLabel ?? t('reject'))}
         </Button>
       </div>
     </div>

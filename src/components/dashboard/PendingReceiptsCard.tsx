@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
 import type { Locale } from '@/i18n';
 import { useEmployeeMealAllowances } from '@/hooks/useEmployeeMealAllowances';
+import type { ApiUser } from '@/types/employeeMealAllowance.types';
 import type { Receipt } from '@/types/receipt.types';
 import type { WorkplaceType } from '@/types/employee.types';
 import { receiptInYearMonth } from '@/utils/receiptMonthFilter';
@@ -15,6 +16,7 @@ import {
 } from '@/utils/employeeAllowance';
 import { Card } from '@/components/common/Card';
 import { EmployeeAllowancePopover } from '@/components/dashboard/EmployeeAllowancePopover';
+import { MonthlyRejectModal } from '@/components/dashboard/MonthlyRejectModal';
 import { ReceiptItem } from '@/components/dashboard/ReceiptItem';
 import styles from './PendingReceiptsCard.module.scss';
 
@@ -25,8 +27,9 @@ type Props = {
   payrollDisbursedInternal: number | null;
   payrollDisbursedExternal: number | null;
   loading?: boolean;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
+  onApproveEmployee: (employeeId: string) => void | Promise<void>;
+  onRejectEmployee: (employeeId: string, rejectReason: string) => void | Promise<void>;
+  actionSaving?: boolean;
 };
 
 type AllowanceEditorState = {
@@ -80,6 +83,63 @@ function formatBudgetLabel(
   return `${formatCurrency(amount, locale)} ${currencyLabel}`;
 }
 
+type RejectModalState = {
+  employeeId: string;
+  employeeName: string;
+  receipt: Receipt;
+};
+
+type ReviewedEmployeeEntry = {
+  status: 'APPROVED' | 'REJECTED';
+  receipt: Receipt;
+};
+
+type EmployeeCardEntry = {
+  receipt: Receipt;
+  reviewStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+};
+
+function employeeKey(receipt: Receipt, users: ApiUser[]): string {
+  return resolveEmployeeForReceipt(receipt, users)?.mongoId ?? receipt.employeeId;
+}
+
+function buildEmployeeCards(
+  pendingReceipts: Receipt[],
+  reviewedEmployees: Map<string, ReviewedEmployeeEntry>,
+  users: ApiUser[],
+): EmployeeCardEntry[] {
+  const cards = new Map<string, EmployeeCardEntry>();
+
+  for (const receipt of onePendingReceiptPerEmployee(pendingReceipts)) {
+    cards.set(employeeKey(receipt, users), { receipt, reviewStatus: 'PENDING' });
+  }
+
+  for (const [key, entry] of reviewedEmployees) {
+    cards.set(key, { receipt: entry.receipt, reviewStatus: entry.status });
+  }
+
+  return [...cards.values()].sort(
+    (a, b) => new Date(b.receipt.createdAt).getTime() - new Date(a.receipt.createdAt).getTime(),
+  );
+}
+
+function splitCardsByWorkplace(
+  cards: EmployeeCardEntry[],
+  users: ApiUser[],
+): { internalList: EmployeeCardEntry[]; externalList: EmployeeCardEntry[] } {
+  const internal: EmployeeCardEntry[] = [];
+  const external: EmployeeCardEntry[] = [];
+
+  for (const card of cards) {
+    const resolved = resolveEmployeeForReceipt(card.receipt, users);
+    const wp: WorkplaceType = resolved?.workplace ?? card.receipt.employeeWorkplace ?? 'EXTERNAL';
+    if (wp === 'INTERNAL') internal.push(card);
+    else external.push(card);
+  }
+
+  return { internalList: internal, externalList: external };
+}
+
 export function PendingReceiptsCard({
   receipts,
   year,
@@ -87,12 +147,23 @@ export function PendingReceiptsCard({
   payrollDisbursedInternal,
   payrollDisbursedExternal,
   loading = false,
-  onApprove,
-  onReject,
+  onApproveEmployee,
+  onRejectEmployee,
+  actionSaving = false,
 }: Props) {
   const { t, locale } = useI18n();
   const [editor, setEditor] = useState<AllowanceEditorState | null>(null);
   const [saveError, setSaveError] = useState('');
+  const [rejectModal, setRejectModal] = useState<RejectModalState | null>(null);
+  const [rejectError, setRejectError] = useState('');
+  const [reviewedEmployees, setReviewedEmployees] = useState<
+    Map<string, ReviewedEmployeeEntry>
+  >(() => new Map());
+  const [savingEmployeeId, setSavingEmployeeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReviewedEmployees(new Map());
+  }, [year, month]);
 
   const {
     allowanceMap,
@@ -103,20 +174,17 @@ export function PendingReceiptsCard({
 
   const pending = receipts.filter((r) => r.status === 'PENDING');
 
-  const { internalList, externalList } = useMemo(() => {
-    const internal: Receipt[] = [];
-    const external: Receipt[] = [];
-    for (const r of pending) {
-      const resolved = resolveEmployeeForReceipt(r, users);
-      const wp: WorkplaceType = resolved?.workplace ?? r.employeeWorkplace ?? 'EXTERNAL';
-      if (wp === 'INTERNAL') internal.push(r);
-      else external.push(r);
-    }
-    return {
-      internalList: onePendingReceiptPerEmployee(internal),
-      externalList: onePendingReceiptPerEmployee(external),
-    };
-  }, [pending, users]);
+  const employeeCards = useMemo(
+    () => buildEmployeeCards(pending, reviewedEmployees, users),
+    [pending, reviewedEmployees, users],
+  );
+
+  const { internalList, externalList } = useMemo(
+    () => splitCardsByWorkplace(employeeCards, users),
+    [employeeCards, users],
+  );
+
+  const hasAnyCards = employeeCards.length > 0;
 
   const openAllowanceEditor = (
     receipt: Receipt,
@@ -176,10 +244,71 @@ export function PendingReceiptsCard({
     }
   };
 
+  const openRejectModal = (employeeId: string, employeeName: string, receipt: Receipt) => {
+    setRejectError('');
+    setRejectModal({
+      employeeId: employeeKey(receipt, users) || employeeId,
+      employeeName,
+      receipt,
+    });
+  };
+
+  const closeRejectModal = () => {
+    if (actionSaving || savingEmployeeId) return;
+    setRejectError('');
+    setRejectModal(null);
+  };
+
+  const handleRejectConfirm = async (rejectReason: string) => {
+    if (!rejectModal) return;
+
+    const { employeeId, receipt } = rejectModal;
+    const key = employeeKey(receipt, users);
+    setSavingEmployeeId(key);
+    setReviewedEmployees((prev) =>
+      new Map(prev).set(key, { status: 'REJECTED', receipt }),
+    );
+    try {
+      await onRejectEmployee(employeeId, rejectReason);
+      setRejectModal(null);
+      setRejectError('');
+    } catch (err) {
+      setReviewedEmployees((prev) => {
+        const next = new Map(prev);
+        next.delete(key);
+        return next;
+      });
+      setRejectError(err instanceof Error ? err.message : t('checksMonthlyRejectError'));
+    } finally {
+      setSavingEmployeeId(null);
+    }
+  };
+
+  const handleApproveEmployee = async (employeeId: string, receipt: Receipt) => {
+    const key = employeeKey(receipt, users);
+    setSavingEmployeeId(key);
+    setReviewedEmployees((prev) =>
+      new Map(prev).set(key, { status: 'APPROVED', receipt }),
+    );
+    try {
+      setSaveError('');
+      await onApproveEmployee(employeeId);
+    } catch (err) {
+      setReviewedEmployees((prev) => {
+        const next = new Map(prev);
+        next.delete(key);
+        return next;
+      });
+      setSaveError(err instanceof Error ? err.message : t('checksMonthlyApproveError'));
+    } finally {
+      setSavingEmployeeId(null);
+    }
+  };
+
   const renderSection = (
     titleKey: 'payrollInternal' | 'payrollExternal',
     groupBudget: number | null,
-    list: Receipt[],
+    list: EmployeeCardEntry[],
   ) => (
     <div className={styles.section}>
       <div className={styles.sectionHead}>
@@ -193,7 +322,7 @@ export function PendingReceiptsCard({
         <p className={styles.sectionEmpty}>{t('noPending')}</p>
       ) : (
         <ul className={styles.groupList}>
-          {list.map((receipt) => {
+          {list.map(({ receipt, reviewStatus }) => {
             const resolved = resolveEmployeeForReceipt(receipt, users);
             const allowance = resolved ? allowanceMap.get(resolved.mongoId) : undefined;
             const workplace = resolved?.workplace ?? receipt.employeeWorkplace ?? 'EXTERNAL';
@@ -211,9 +340,12 @@ export function PendingReceiptsCard({
             );
             const photoUrl = resolved?.avatarUrl ?? receipt.employeePhotoUrl ?? '';
             const initial = receipt.employeeName.trim().charAt(0).toUpperCase() || '?';
+            const cardKey = employeeKey(receipt, users);
+            const isSaving = savingEmployeeId === cardKey;
+            const isReviewed = reviewStatus !== 'PENDING';
 
             return (
-              <li key={receipt.id}>
+              <li key={cardKey}>
                 <ReceiptItem
                   receipt={receipt}
                   workplace={workplace}
@@ -221,12 +353,20 @@ export function PendingReceiptsCard({
                   monthReceiptsTotal={monthReceiptsTotal}
                   employeePhotoUrl={photoUrl}
                   employeeInitial={initial}
-                  onApprove={() => onApprove(receipt.id)}
-                  onReject={() => onReject(receipt.id)}
+                  reviewStatus={reviewStatus}
+                  approveLabel={t('pendingApproveAll')}
+                  rejectLabel={t('pendingRejectAll')}
+                  actionsDisabled={actionSaving || isSaving || isReviewed}
+                  onApprove={() => void handleApproveEmployee(cardKey, receipt)}
+                  onReject={() =>
+                    openRejectModal(receipt.employeeId, receipt.employeeName, receipt)
+                  }
                   onAllocationClick={
-                    resolved
-                      ? (event) => openAllowanceEditor(receipt, event)
-                      : undefined
+                    isReviewed
+                      ? undefined
+                      : resolved
+                        ? (event) => openAllowanceEditor(receipt, event)
+                        : undefined
                   }
                 />
               </li>
@@ -249,9 +389,9 @@ export function PendingReceiptsCard({
         </p>
       ) : null}
 
-      {loading ? (
+      {loading && !hasAnyCards ? (
         <p className={styles.empty}>{t('loading')}</p>
-      ) : pending.length === 0 ? (
+      ) : !hasAnyCards ? (
         <p className={styles.empty}>{t('noPending')}</p>
       ) : (
         <div className={styles.groups}>
@@ -271,6 +411,15 @@ export function PendingReceiptsCard({
         saveError={saveError}
         onSave={handleSaveAllowance}
         onClose={closeAllowanceEditor}
+      />
+
+      <MonthlyRejectModal
+        open={rejectModal !== null}
+        employeeName={rejectModal?.employeeName ?? ''}
+        saving={actionSaving || savingEmployeeId !== null}
+        error={rejectError}
+        onConfirm={handleRejectConfirm}
+        onClose={closeRejectModal}
       />
     </Card>
   );
