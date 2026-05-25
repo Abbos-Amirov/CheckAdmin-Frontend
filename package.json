@@ -6,10 +6,21 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node scripts/production-server.mjs",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:restart": "pm2 restart admin-check-frontend --update-env",
+    "pm2:stop": "pm2 stop admin-check-frontend",
+    "pm2:logs": "pm2 logs admin-check-frontend",
+    "deploy": "bash scripts/deploy.sh"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
+    "express": "^4.21.1",
     "exceljs": "^4.4.0",
+    "http-proxy-middleware": "^3.0.3",
     "file-saver": "^2.0.5",
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
