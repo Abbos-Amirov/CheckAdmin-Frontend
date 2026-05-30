@@ -94,6 +94,21 @@ export const uz = {
   reportsPageTitle: 'Hisobotlar',
   reportsPageHint:
     'Joriy yil uchun oy ustiga bosing — har bir xodim ovqat puli hisobotini topshirdi yoki topshirmaganligi ko‘rinadi.',
+  reportsApprovedHint:
+    'Admin tomonidan to‘liq tasdiqlangan ishchilar — oy tanlang, ishchini bosib cheklarini ko‘ring.',
+  reportsApprovedMonthsTitle: 'Tasdiqlangan ishchilar — oylar',
+  reportsApprovedPickMonthHint: 'Oy ustiga bosing — shu oydagi tasdiqlangan ishchilar ro‘yxati ochiladi.',
+  reportsApprovedYearTotal: 'Yil bo‘yicha jami: {{count}} ta (oylar yig‘indisi)',
+  reportsApprovedMonthBadge: '{{count}} ta',
+  reportsApprovedEmployeesTitle: 'Tasdiqlangan ishchilar',
+  reportsApprovedEmployeesCount: '{{count}} ta ishchi',
+  reportsApprovedEmpty: 'Shu oyda to‘liq tasdiqlangan ishchi yo‘q.',
+  reportsChecksCol: 'Cheklar',
+  reportsAmountCol: 'Jami summa',
+  reportsApprovedChecksTitle: '{{name}} — cheklar',
+  reportsApprovedChecksSummary: '{{count}} ta chek · {{amount}}',
+  reportsBackToList: 'Ro‘yxatga qaytish',
+  reportsLoadError: 'Hisobot ma’lumotlarini yuklab bo‘lmadi.',
   settingsPageTitle: 'Sozlamalar',
   settingsPageHint:
     'Quyidagi bloklar demo ma’lumot bilan to‘ldirilgan — keyinchalik API va haqiqiy integratsiyalar bilan almashtirasiz.',

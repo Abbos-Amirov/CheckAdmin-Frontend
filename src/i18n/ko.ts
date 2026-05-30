@@ -96,6 +96,21 @@ export const ko: Record<TranslationKey, string> = {
   reportsPageTitle: '보고서',
   reportsPageHint:
     '올해 월을 선택하면 직원별 식비 보고서 제출 여부를 볼 수 있습니다.',
+  reportsApprovedHint:
+    '관리자가 완전히 승인한 직원 — 월을 선택하고 직원을 눌러 영수증을 확인하세요.',
+  reportsApprovedMonthsTitle: '승인된 직원 — 월별',
+  reportsApprovedPickMonthHint: '월을 선택하면 해당 월의 승인된 직원 목록이 표시됩니다.',
+  reportsApprovedYearTotal: '연간 합계: {{count}}명 (월별 합산)',
+  reportsApprovedMonthBadge: '{{count}}명',
+  reportsApprovedEmployeesTitle: '승인된 직원',
+  reportsApprovedEmployeesCount: '직원 {{count}}명',
+  reportsApprovedEmpty: '이 달에 완전히 승인된 직원이 없습니다.',
+  reportsChecksCol: '영수증',
+  reportsAmountCol: '총 금액',
+  reportsApprovedChecksTitle: '{{name}} — 영수증',
+  reportsApprovedChecksSummary: '영수증 {{count}}건 · {{amount}}',
+  reportsBackToList: '목록으로',
+  reportsLoadError: '보고서 데이터를 불러올 수 없습니다.',
   settingsPageTitle: '설정',
   settingsPageHint:
     '아래 블록은 데모 데이터로 채워져 있습니다. 추후 API 및 실제 연동으로 교체하면 됩니다.',
