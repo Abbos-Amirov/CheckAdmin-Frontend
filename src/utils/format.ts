@@ -20,6 +20,15 @@ export function formatCurrency(amount: number, locale: Locale): string {
   return new Intl.NumberFormat(lc, { maximumFractionDigits: 0 }).format(amount);
 }
 
+/** Excel eksport — chek sanasi (masalan: 12.05.2026). */
+export function formatReceiptDate(iso: string, _locale: Locale): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day}.${month}.${d.getFullYear()}`;
+}
+
 export function formatCompactMonthlySum(amount: number, locale: Locale): string {
   const millions = amount / 1_000_000;
   if (millions >= 1 && millions === Math.round(millions * 10) / 10) {

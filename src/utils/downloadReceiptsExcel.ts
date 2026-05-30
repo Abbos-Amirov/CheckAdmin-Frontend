@@ -1,10 +1,14 @@
-/** Excel eksport — faqat summa qatorlari. */
+/** Excel eksport — chek qatorlari (do'kon, sana, summa). */
 export type ReceiptAmountExport = {
   amount: number;
+  storeName: string;
+  createdAt: string;
 };
 
 export type ReceiptsExcelMinimalLabels = {
   employeeName: string;
+  storeName: string;
+  date: string;
   amount: string;
   grandTotal: string;
 };
@@ -84,7 +88,7 @@ function autoColumnWidths(layout: EmployeeSheetLayout): { wch: number }[] {
 
 type CellStyle = {
   font?: { bold?: boolean; sz?: number };
-  alignment?: { horizontal?: string; vertical?: string };
+  alignment?: { horizontal?: string; vertical?: string; wrapText?: boolean };
 };
 
 function styledCell(value: string | number, style: CellStyle) {
@@ -169,107 +173,154 @@ function colLetter(colIndex: number): string {
   return s;
 }
 
-function buildHorizontalRows(
-  groups: ReceiptEmployeeGroup[],
-  labels: ReceiptsExcelMinimalLabels,
-  formatAmount: (amount: number) => string,
-): string[][] {
-  const headerRow = groups.map(() => labels.employeeName);
-  const nameRow = groups.map((g) => g.employeeName);
-  const maxAmountRows = Math.max(...groups.map((g) => g.receipts.length), 0);
+const COLS_PER_EMPLOYEE_BLOCK = 3;
+const SPACER_COLS_BETWEEN_BLOCKS = 1;
 
-  const amountRows: string[][] = [];
-  for (let i = 0; i < maxAmountRows; i++) {
-    amountRows.push(
-      groups.map((g) => {
-        const item = g.receipts[i];
-        return item ? formatAmount(item.amount) : '';
-      }),
-    );
-  }
-
-  const totalRow = groups.map((g) => {
-    const total = g.receipts.reduce((sum, item) => sum + item.amount, 0);
-    return formatAmount(total);
-  });
-
-  return [headerRow, nameRow, ...amountRows, [], totalRow];
+function blockStartCol(groupIndex: number): number {
+  return groupIndex * (COLS_PER_EMPLOYEE_BLOCK + SPACER_COLS_BETWEEN_BLOCKS);
 }
+
+function sheetColCount(groupCount: number): number {
+  if (groupCount === 0) return 0;
+  return (
+    groupCount * COLS_PER_EMPLOYEE_BLOCK + (groupCount - 1) * SPACER_COLS_BETWEEN_BLOCKS
+  );
+}
+
+type MergeRange = { s: { r: number; c: number }; e: { r: number; c: number } };
 
 function createHorizontalStyledWorksheet(
   groups: ReceiptEmployeeGroup[],
   labels: ReceiptsExcelMinimalLabels,
   formatAmount: (amount: number) => string,
+  formatDate: (createdAt: string) => string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   XLSX: { utils: { aoa_to_sheet: (data: (string | number)[][]) => Record<string, unknown> } },
 ): Record<string, unknown> {
-  const rows = buildHorizontalRows(groups, labels, formatAmount);
-  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const maxReceipts = Math.max(...groups.map((g) => g.receipts.length), 0);
+  const totalRows = 3 + maxReceipts;
+  const totalCols = sheetColCount(groups.length);
+  const grid: string[][] = Array.from({ length: totalRows }, () =>
+    Array(totalCols).fill(''),
+  );
 
-  const headerStyle: CellStyle = {
-    font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
   const nameStyle: CellStyle = {
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
-  const amountStyle: CellStyle = {
+    font: { bold: true, sz: 14 },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
   const totalStyle: CellStyle = {
-    font: { bold: true, sz: 12 },
+    font: { bold: true, sz: 13 },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
+  const tableHeaderStyle: CellStyle = {
+    font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  };
+  const dataStyle: CellStyle = {
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  };
 
-  const colCount = groups.length;
-  const maxAmountRows = Math.max(...groups.map((g) => g.receipts.length), 0);
-  const totalExcelRow = 4 + maxAmountRows;
+  const merges: MergeRange[] = [];
 
-  for (let c = 0; c < colCount; c++) {
-    const col = colLetter(c);
-    ws[`${col}1`] = styledCell(rows[0][c] as string, headerStyle);
-    ws[`${col}2`] = styledCell(rows[1][c] as string, nameStyle);
-    ws[`${col}${totalExcelRow}`] = styledCell(rows[rows.length - 1][c] as string, totalStyle);
-  }
+  groups.forEach((group, groupIndex) => {
+    const sc = blockStartCol(groupIndex);
+    const totalAmount = group.receipts.reduce((sum, item) => sum + item.amount, 0);
 
-  for (let r = 0; r < maxAmountRows; r++) {
-    for (let c = 0; c < colCount; c++) {
-      const value = rows[2 + r][c];
-      if (value) {
-        ws[`${colLetter(c)}${3 + r}`] = styledCell(value as string, amountStyle);
-      }
-    }
-  }
+    grid[0][sc] = group.employeeName;
+    merges.push({ s: { r: 0, c: sc }, e: { r: 0, c: sc + 2 } });
 
-  ws['!cols'] = groups.map((g) => {
-    const total = g.receipts.reduce((sum, item) => sum + item.amount, 0);
-    const maxLen = Math.max(
-      labels.employeeName.length,
-      g.employeeName.length,
-      formatAmount(total).length,
-      ...g.receipts.map((item) => formatAmount(item.amount).length),
-      12,
-    );
-    return { wch: Math.min(maxLen + 2, 36) };
+    grid[1][sc] = `${labels.grandTotal}: ${formatAmount(totalAmount)}`;
+    merges.push({ s: { r: 1, c: sc }, e: { r: 1, c: sc + 2 } });
+
+    grid[2][sc] = labels.storeName;
+    grid[2][sc + 1] = labels.date;
+    grid[2][sc + 2] = labels.amount;
+
+    group.receipts.forEach((item, receiptIndex) => {
+      const row = 3 + receiptIndex;
+      grid[row][sc] = item.storeName;
+      grid[row][sc + 1] = formatDate(item.createdAt);
+      grid[row][sc + 2] = formatAmount(item.amount);
+    });
   });
+
+  const ws = XLSX.utils.aoa_to_sheet(grid);
+  ws['!merges'] = merges;
+
+  for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+    const sc = blockStartCol(groupIndex);
+    const group = groups[groupIndex];
+
+    ws[`${colLetter(sc)}1`] = styledCell(grid[0][sc], nameStyle);
+    ws[`${colLetter(sc)}2`] = styledCell(grid[1][sc], totalStyle);
+    ws[`${colLetter(sc)}3`] = styledCell(grid[2][sc], tableHeaderStyle);
+    ws[`${colLetter(sc + 1)}3`] = styledCell(grid[2][sc + 1], tableHeaderStyle);
+    ws[`${colLetter(sc + 2)}3`] = styledCell(grid[2][sc + 2], tableHeaderStyle);
+
+    group.receipts.forEach((_item, receiptIndex) => {
+      const excelRow = 4 + receiptIndex;
+      ws[`${colLetter(sc)}${excelRow}`] = styledCell(
+        grid[3 + receiptIndex][sc],
+        dataStyle,
+      );
+      ws[`${colLetter(sc + 1)}${excelRow}`] = styledCell(
+        grid[3 + receiptIndex][sc + 1],
+        dataStyle,
+      );
+      ws[`${colLetter(sc + 2)}${excelRow}`] = styledCell(
+        grid[3 + receiptIndex][sc + 2],
+        dataStyle,
+      );
+    });
+  }
+
+  const colWidths: { wch: number }[] = Array(totalCols).fill({ wch: 2 });
+  groups.forEach((group, groupIndex) => {
+    const sc = blockStartCol(groupIndex);
+    const storeWidth = Math.min(
+      Math.max(
+        labels.storeName.length,
+        group.employeeName.length,
+        ...group.receipts.map((r) => r.storeName.length),
+        10,
+      ) + 2,
+      28,
+    );
+    const dateWidth = Math.max(labels.date.length, 12);
+    const amountWidth = Math.min(
+      Math.max(
+        labels.amount.length,
+        formatAmount(group.receipts.reduce((s, r) => s + r.amount, 0)).length + 4,
+        ...group.receipts.map((r) => formatAmount(r.amount).length),
+        10,
+      ) + 2,
+      18,
+    );
+
+    colWidths[sc] = { wch: storeWidth };
+    colWidths[sc + 1] = { wch: dateWidth };
+    colWidths[sc + 2] = { wch: amountWidth };
+  });
+  ws['!cols'] = colWidths;
 
   return ws;
 }
 
 /**
- * Barcha ishchilar — bitta varaq: ismlar gorizontal, summalar vertikal, pastda jami.
+ * Barcha ishchilar — har ishchi uchun blok: ism, umumiy summa, jadval (do'kon | sana | summa).
  */
 export async function downloadReceiptsExcelAllHorizontal(
   groups: ReceiptEmployeeGroup[],
   fileBaseName: string,
   labels: ReceiptsExcelMinimalLabels,
   formatAmount: (amount: number) => string,
+  formatDate: (createdAt: string) => string,
 ): Promise<void> {
   const nonEmpty = groups.filter((g) => g.receipts.length > 0);
   if (nonEmpty.length === 0) return;
 
   const XLSX = await import('xlsx-js-style');
-  const ws = createHorizontalStyledWorksheet(nonEmpty, labels, formatAmount, XLSX);
+  const ws = createHorizontalStyledWorksheet(nonEmpty, labels, formatAmount, formatDate, XLSX);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, ws, 'Receipts');
   XLSX.writeFile(workbook, `${sanitizeFileName(fileBaseName)}.xlsx`);

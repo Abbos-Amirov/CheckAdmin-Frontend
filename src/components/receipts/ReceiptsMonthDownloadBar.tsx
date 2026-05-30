@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Receipt } from '@/types/receipt.types';
 import { useI18n } from '@/app/providers/I18nProvider';
 import { receiptScanImageUrl } from '@/data/receiptScanAssets';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency, formatReceiptDate } from '@/utils/format';
 import {
   downloadMergedReceiptScansPdf,
   downloadReceiptScansPngAll,
@@ -30,18 +30,31 @@ type Props = {
   className?: string;
 };
 
+function toReceiptExport(r: Receipt): ReceiptAmountExport {
+  return {
+    amount: r.amount,
+    storeName: r.storeName,
+    createdAt: r.createdAt,
+  };
+}
+
 function groupByEmployee(receipts: Receipt[]): ReceiptEmployeeGroup[] {
   const map = new Map<string, ReceiptAmountExport[]>();
 
   for (const r of receipts) {
     const list = map.get(r.employeeName) ?? [];
-    list.push({ amount: r.amount });
+    list.push(toReceiptExport(r));
     map.set(r.employeeName, list);
   }
 
   return [...map.entries()]
     .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
-    .map(([employeeName, amounts]) => ({ employeeName, receipts: amounts }));
+    .map(([employeeName, groupReceipts]) => ({
+      employeeName,
+      receipts: groupReceipts.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    }));
 }
 
 export function ReceiptsMonthDownloadBar({
@@ -75,8 +88,12 @@ export function ReceiptsMonthDownloadBar({
   const formatAmount = (amount: number) =>
     `${formatCurrency(amount, locale)} ${t('currency')}`;
 
+  const formatDate = (createdAt: string) => formatReceiptDate(createdAt, locale);
+
   const excelLabels = {
     employeeName: t('receiptExcelColEmployee'),
+    storeName: t('receiptExcelColStore'),
+    date: t('receiptExcelColDate'),
     amount: t('receiptExcelColAmount'),
     grandTotal: t('receiptExcelGrandTotal'),
   };
@@ -118,11 +135,17 @@ export function ReceiptsMonthDownloadBar({
       const name = singleEmployeeName ?? employeeGroups[0].employeeName;
       const amounts =
         singleEmployeeName != null
-          ? receipts.map((r) => ({ amount: r.amount }))
+          ? receipts.map(toReceiptExport)
           : employeeGroups[0].receipts;
       return downloadReceiptsExcel(name, amounts, excelLabels, formatAmount);
     }
-    return downloadReceiptsExcelAllHorizontal(employeeGroups, fileBase, excelLabels, formatAmount);
+    return downloadReceiptsExcelAllHorizontal(
+      employeeGroups,
+      fileBase,
+      excelLabels,
+      formatAmount,
+      formatDate,
+    );
   };
 
   const pdfBaseName = singleEmployeeName

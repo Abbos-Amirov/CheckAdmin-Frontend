@@ -199,6 +199,8 @@ export const ko: Record<TranslationKey, string> = {
   receiptExcelDownload: '엑셀 다운로드',
   receiptExcelColNo: '번호',
   receiptExcelColEmployee: '직원 이름',
+  receiptExcelColStore: '매장',
+  receiptExcelColDate: '날짜',
   receiptExcelColImage: '영수증 사진',
   receiptExcelColAmount: '금액',
   receiptExcelGrandTotal: '총 금액',

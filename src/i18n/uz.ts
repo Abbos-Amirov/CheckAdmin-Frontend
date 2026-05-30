@@ -198,6 +198,8 @@ export const uz = {
   receiptExcelDownload: 'Excel yuklab olish',
   receiptExcelColNo: 'No',
   receiptExcelColEmployee: 'Xodim ismi',
+  receiptExcelColStore: "Do'kon",
+  receiptExcelColDate: 'Sana',
   receiptExcelColImage: 'Chek rasmi',
   receiptExcelColAmount: 'Summa',
   receiptExcelGrandTotal: 'Umumiy summa',
