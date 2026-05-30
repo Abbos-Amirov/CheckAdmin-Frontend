@@ -11,14 +11,24 @@ export type ReceiptsExcelWithImagesLabels = {
   receiptImage: string;
   amount: string;
   grandTotal: string;
+  viewLarger: string;
+  viewLargerHint: string;
+  detailSheetName: string;
 };
 
-const IMAGE_WIDTH = 120;
-const IMAGE_HEIGHT = 120;
-/** ~120px thumbnail in Excel row units (points). */
-const RECEIPT_ROW_HEIGHT = 90;
-const IMAGE_COL_WIDTH = 20;
-const AMOUNT_COL_WIDTH = 16;
+/** Portret chek — asosiy varaq (thumbnail). */
+const IMAGE_WIDTH = 180;
+const IMAGE_HEIGHT = 300;
+const RECEIPT_ROW_HEIGHT = 230;
+const IMAGE_COL_WIDTH = 34;
+const AMOUNT_COL_WIDTH = 18;
+const LINK_COL_WIDTH = 14;
+
+/** Kattaroq ko'rinish varaqidagi rasm. */
+const DETAIL_IMAGE_WIDTH = 360;
+const DETAIL_IMAGE_HEIGHT = 600;
+const DETAIL_ROW_HEIGHT = 455;
+const DETAIL_COL_WIDTH = 54;
 
 function sanitizeSheetName(raw: string): string {
   const cleaned = raw.replace(/[\[\]:*?/\\]/g, '_').slice(0, 31);
@@ -34,8 +44,13 @@ function resolveImageUrl(url: string): string {
   return new URL(url, window.location.origin).href;
 }
 
+function internalSheetLink(sheetName: string, cell: string): string {
+  const escaped = sheetName.replace(/'/g, "''");
+  return `#'${escaped}'!${cell}`;
+}
+
 type ImagePayload = {
-  buffer: Buffer | ArrayBuffer;
+  buffer: ArrayBuffer;
   extension: 'png' | 'jpeg' | 'gif';
 };
 
@@ -78,6 +93,11 @@ function styleAmountCell(cell: Cell): void {
   cell.alignment = { vertical: 'middle', horizontal: 'center' };
 }
 
+function styleLinkCell(cell: Cell): void {
+  cell.font = { size: 10, color: { argb: 'FF2563EB' }, underline: true };
+  cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+}
+
 function styleTotalLabelCell(cell: Cell): void {
   cell.font = { bold: true, size: 12 };
   cell.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -88,15 +108,49 @@ function styleTotalValueCell(cell: Cell): void {
   cell.alignment = { vertical: 'middle', horizontal: 'center' };
 }
 
-function applyWorksheetChrome(worksheet: Worksheet): void {
+function styleDetailCaptionCell(cell: Cell): void {
+  cell.font = { bold: true, size: 12 };
+  cell.alignment = { vertical: 'middle', horizontal: 'left' };
+}
+
+function applyMainWorksheetChrome(worksheet: Worksheet): void {
   worksheet.getColumn(1).width = IMAGE_COL_WIDTH;
   worksheet.getColumn(2).width = AMOUNT_COL_WIDTH;
+  worksheet.getColumn(3).width = LINK_COL_WIDTH;
   worksheet.views = [{ state: 'frozen', ySplit: 3 }];
+}
+
+function setHyperlinkCell(
+  cell: Cell,
+  text: string,
+  target: string,
+  tooltip: string,
+): void {
+  cell.value = { text, hyperlink: target, tooltip };
+  styleLinkCell(cell);
+}
+
+function embedImage(
+  worksheet: Worksheet,
+  workbook: import('exceljs').Workbook,
+  payload: ImagePayload,
+  row: number,
+  width: number,
+  height: number,
+): void {
+  const imageId = workbook.addImage({
+    buffer: payload.buffer,
+    extension: payload.extension,
+  });
+  worksheet.addImage(imageId, {
+    tl: { col: 0.05, row: row - 1 + 0.04 },
+    ext: { width, height },
+  });
 }
 
 /**
  * Bitta xodim — chek rasmlari + summalar + jami (ExcelJS).
- * Fayl: `{employeeName}_receipts.xlsx`
+ * Ustun C: kattaroq ko'rinish varaqiga havola. Ikkinchi varaqda katta rasm.
  */
 export async function downloadReceiptsExcelWithImages(
   employeeName: string,
@@ -110,67 +164,96 @@ export async function downloadReceiptsExcelWithImages(
   const ExcelJS = await import('exceljs');
   const { saveAs } = await import('file-saver');
 
+  const imagePayloads = await Promise.all(
+    receipts.map(async (receipt) => {
+      if (!receipt.imageUrl) return null;
+      try {
+        return await fetchImagePayload(receipt.imageUrl);
+      } catch {
+        return null;
+      }
+    }),
+  );
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'PNS Receipt';
-  const worksheet = workbook.addWorksheet(sanitizeSheetName(employeeName));
-  applyWorksheetChrome(worksheet);
 
-  const nameLabelCell = worksheet.getCell('A1');
-  nameLabelCell.value = labels.employeeName;
-  styleHeaderCell(nameLabelCell);
+  const detailSheetTitle = sanitizeSheetName(labels.detailSheetName);
+  const mainSheet = workbook.addWorksheet(sanitizeSheetName(employeeName));
+  const detailSheet = workbook.addWorksheet(detailSheetTitle);
+  detailSheet.getColumn(1).width = DETAIL_COL_WIDTH;
 
-  const nameValueCell = worksheet.getCell('B1');
-  nameValueCell.value = employeeName;
-  styleValueCell(nameValueCell);
+  applyMainWorksheetChrome(mainSheet);
 
-  worksheet.getRow(2).height = 8;
+  mainSheet.getCell('A1').value = labels.employeeName;
+  styleHeaderCell(mainSheet.getCell('A1'));
+  mainSheet.getCell('B1').value = employeeName;
+  styleValueCell(mainSheet.getCell('B1'));
+  mainSheet.getRow(2).height = 8;
 
-  const imageHeaderCell = worksheet.getCell('A3');
-  imageHeaderCell.value = labels.receiptImage;
-  styleHeaderCell(imageHeaderCell);
+  mainSheet.getCell('A3').value = labels.receiptImage;
+  styleHeaderCell(mainSheet.getCell('A3'));
+  mainSheet.getCell('B3').value = labels.amount;
+  styleHeaderCell(mainSheet.getCell('B3'));
+  mainSheet.getCell('C3').value = labels.viewLarger;
+  styleHeaderCell(mainSheet.getCell('C3'));
 
-  const amountHeaderCell = worksheet.getCell('B3');
-  amountHeaderCell.value = labels.amount;
-  styleHeaderCell(amountHeaderCell);
+  const detailAnchors: string[] = [];
+  let detailRow = 1;
+  receipts.forEach((receipt, index) => {
+    const captionRow = detailRow;
+    detailAnchors.push(`A${captionRow}`);
 
-  let currentRow = 4;
+    const captionCell = detailSheet.getCell(captionRow, 1);
+    captionCell.value = `${index + 1}. ${formatAmount(receipt.amount)}`;
+    styleDetailCaptionCell(captionCell);
+    detailSheet.getRow(captionRow).height = 22;
 
-  for (const receipt of receipts) {
-    const row = worksheet.getRow(currentRow);
-    row.height = RECEIPT_ROW_HEIGHT;
+    detailRow += 1;
+    const imageRow = detailRow;
+    detailSheet.getRow(imageRow).height = DETAIL_ROW_HEIGHT;
 
-    const amountCell = worksheet.getCell(currentRow, 2);
-    amountCell.value = formatAmount(receipt.amount);
-    styleAmountCell(amountCell);
-
-    try {
-      const { buffer, extension } = await fetchImagePayload(receipt.imageUrl);
-      const imageId = workbook.addImage({ buffer, extension });
-      worksheet.addImage(imageId, {
-        tl: { col: 0.15, row: currentRow - 1 + 0.08 },
-        ext: { width: IMAGE_WIDTH, height: IMAGE_HEIGHT },
-      });
-    } catch {
-      const fallbackCell = worksheet.getCell(currentRow, 1);
-      fallbackCell.value = '—';
-      fallbackCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    const payload = imagePayloads[index];
+    if (payload) {
+      embedImage(detailSheet, workbook, payload, imageRow, DETAIL_IMAGE_WIDTH, DETAIL_IMAGE_HEIGHT);
+    } else {
+      detailSheet.getCell(imageRow, 1).value = '—';
     }
 
+    detailRow += 2;
+  });
+
+  let currentRow = 4;
+  receipts.forEach((receipt, index) => {
+    mainSheet.getRow(currentRow).height = RECEIPT_ROW_HEIGHT;
+    mainSheet.getCell(currentRow, 2).value = formatAmount(receipt.amount);
+    styleAmountCell(mainSheet.getCell(currentRow, 2));
+
+    const payload = imagePayloads[index];
+    if (payload) {
+      embedImage(mainSheet, workbook, payload, currentRow, IMAGE_WIDTH, IMAGE_HEIGHT);
+    } else {
+      mainSheet.getCell(currentRow, 1).value = '—';
+      mainSheet.getCell(currentRow, 1).alignment = { vertical: 'middle', horizontal: 'center' };
+    }
+
+    setHyperlinkCell(
+      mainSheet.getCell(currentRow, 3),
+      labels.viewLarger,
+      internalSheetLink(detailSheetTitle, detailAnchors[index]),
+      labels.viewLargerHint,
+    );
+
     currentRow += 1;
-  }
+  });
 
   currentRow += 1;
-
   const totalAmount = receipts.reduce((sum, item) => sum + item.amount, 0);
-  const totalLabelCell = worksheet.getCell(currentRow, 1);
-  totalLabelCell.value = labels.grandTotal;
-  styleTotalLabelCell(totalLabelCell);
-
-  const totalValueCell = worksheet.getCell(currentRow, 2);
-  totalValueCell.value = formatAmount(totalAmount);
-  styleTotalValueCell(totalValueCell);
-
-  worksheet.getRow(currentRow).height = 24;
+  mainSheet.getCell(currentRow, 1).value = labels.grandTotal;
+  styleTotalLabelCell(mainSheet.getCell(currentRow, 1));
+  mainSheet.getCell(currentRow, 2).value = formatAmount(totalAmount);
+  styleTotalValueCell(mainSheet.getCell(currentRow, 2));
+  mainSheet.getRow(currentRow).height = 24;
 
   const xlsxBuffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([xlsxBuffer], {

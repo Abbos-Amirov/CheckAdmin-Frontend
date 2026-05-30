@@ -203,6 +203,9 @@ export const uz = {
   receiptExcelColImage: 'Chek rasmi',
   receiptExcelColAmount: 'Summa',
   receiptExcelGrandTotal: 'Umumiy summa',
+  receiptExcelViewLarger: 'Kattaroq',
+  receiptExcelViewLargerHint: 'Kattaroq rasm varaqiga o\'tish',
+  receiptExcelDetailSheet: 'Kattaroq rasmlar',
   receiptsMonthBulkDownloadsAria:
     'Tanlangan oy uchun barcha cheklarni PNG, PDF va Excel formatida yuklab olish',
   receiptsAllEmployeesDownloadTitle: 'Barcha ishchilar — umumiy yuklab olish',

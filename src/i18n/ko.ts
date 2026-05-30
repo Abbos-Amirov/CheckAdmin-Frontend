@@ -204,6 +204,9 @@ export const ko: Record<TranslationKey, string> = {
   receiptExcelColImage: '영수증 사진',
   receiptExcelColAmount: '금액',
   receiptExcelGrandTotal: '총 금액',
+  receiptExcelViewLarger: '크게 보기',
+  receiptExcelViewLargerHint: '큰 이미지 시트로 이동',
+  receiptExcelDetailSheet: '큰 이미지',
   receiptsMonthBulkDownloadsAria:
     '선택한 월의 모든 영수증을 PNG, PDF, Excel로 다운로드',
   receiptsAllEmployeesDownloadTitle: '전체 직원 — 일괄 다운로드',

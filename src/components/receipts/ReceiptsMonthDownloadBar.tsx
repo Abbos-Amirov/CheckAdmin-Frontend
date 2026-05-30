@@ -103,6 +103,9 @@ export function ReceiptsMonthDownloadBar({
     receiptImage: t('receiptExcelColImage'),
     amount: t('receiptExcelColAmount'),
     grandTotal: t('receiptExcelGrandTotal'),
+    viewLarger: t('receiptExcelViewLarger'),
+    viewLargerHint: t('receiptExcelViewLargerHint'),
+    detailSheetName: t('receiptExcelDetailSheet'),
   };
 
   const run = async (kind: 'png' | 'pdf' | 'xlsx', fn: () => void | Promise<void>) => {
