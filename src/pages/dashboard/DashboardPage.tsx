@@ -6,6 +6,7 @@ import { useAdminCheckCountsByMonth } from '@/hooks/useAdminCheckCountsByMonth';
 import { useEmployeeMealAllowances } from '@/hooks/useEmployeeMealAllowances';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useMealBudgets } from '@/hooks/useMealBudgets';
+import { usePendingReceiptsTracker } from '@/hooks/usePendingReceiptsTracker';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
 import { EmployeeProgressCard } from '@/components/dashboard/EmployeeProgressCard';
 import { PayrollDisbursementPopover } from '@/components/dashboard/PayrollDisbursementPopover';
@@ -51,6 +52,12 @@ export function DashboardPage() {
     rejectEmployeeMonth,
     reload: reloadChecks,
   } = useAdminChecks(selectedYear, selectedMonth);
+
+  const {
+    tracked: trackedPendingEmployees,
+    markReviewed: markPendingEmployeeReviewed,
+    revertToPending: revertPendingEmployeeToPending,
+  } = usePendingReceiptsTracker(periodReceipts, selectedYear, selectedMonth);
 
   const { countsByMonth } = useAdminCheckCountsByMonth(selectedYear);
 
@@ -263,6 +270,9 @@ export function DashboardPage() {
           month={selectedMonth}
           payrollDisbursedInternal={internalBudget}
           payrollDisbursedExternal={externalBudget}
+          trackedEmployees={trackedPendingEmployees}
+          onMarkReviewed={markPendingEmployeeReviewed}
+          onRevertToPending={revertPendingEmployeeToPending}
           loading={checksLoading}
           actionSaving={checksActionSaving}
           onApproveEmployee={approveEmployeeMonth}

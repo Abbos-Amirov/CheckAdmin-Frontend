@@ -7,6 +7,27 @@ import { ApiError } from '@/api/client';
 import type { Receipt } from '@/types/receipt.types';
 import { mapApiCheckToReceipt } from '@/utils/mapApiCheck';
 
+function monthKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+function applyMonthlyStatusToReceipts(
+  receipts: Receipt[],
+  employeeId: string,
+  year: number,
+  month: number,
+  status: 'APPROVED' | 'REJECTED',
+): Receipt[] {
+  const key = monthKey(year, month);
+  return receipts.map((receipt) =>
+    receipt.employeeId === employeeId &&
+    receipt.month === key &&
+    receipt.status === 'PENDING'
+      ? { ...receipt, status }
+      : receipt,
+  );
+}
+
 export function useAdminChecks(year: number, month: number) {
   const { token } = useAuth();
   const { t } = useI18n();
@@ -67,7 +88,9 @@ export function useAdminChecks(year: number, month: number) {
 
   const approveEmployeeMonth = useCallback(
     async (employeeId: string) => {
-      if (!token) return;
+      if (!token) {
+        throw new Error('Auth token missing');
+      }
 
       setActionSaving(true);
       try {
@@ -81,7 +104,14 @@ export function useAdminChecks(year: number, month: number) {
           token,
         );
         setActionError(null);
-        await load({ silent: true });
+        setReceipts((prev) =>
+          applyMonthlyStatusToReceipts(prev, employeeId, year, month, 'APPROVED'),
+        );
+        try {
+          await load({ silent: true });
+        } catch (loadErr) {
+          console.warn('Checks reload after approve failed:', loadErr);
+        }
       } catch (err) {
         setActionError(resolveErrorMessage(err, 'checksMonthlyApproveError'));
         throw err;
@@ -94,7 +124,9 @@ export function useAdminChecks(year: number, month: number) {
 
   const rejectEmployeeMonth = useCallback(
     async (employeeId: string, rejectReason: string) => {
-      if (!token) return;
+      if (!token) {
+        throw new Error('Auth token missing');
+      }
 
       setActionSaving(true);
       try {
@@ -109,7 +141,14 @@ export function useAdminChecks(year: number, month: number) {
           token,
         );
         setActionError(null);
-        await load({ silent: true });
+        setReceipts((prev) =>
+          applyMonthlyStatusToReceipts(prev, employeeId, year, month, 'REJECTED'),
+        );
+        try {
+          await load({ silent: true });
+        } catch (loadErr) {
+          console.warn('Checks reload after reject failed:', loadErr);
+        }
       } catch (err) {
         setActionError(resolveErrorMessage(err, 'checksMonthlyRejectError'));
         throw err;
