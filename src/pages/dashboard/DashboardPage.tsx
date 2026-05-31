@@ -70,6 +70,9 @@ export function DashboardPage() {
 
   const {
     allowanceMap,
+    users: allowanceUsers,
+    saving: allowanceSaving,
+    saveAllowance,
     loading: allowancesLoading,
     error: allowancesLoadError,
     reload: reloadAllowances,
@@ -270,6 +273,10 @@ export function DashboardPage() {
           month={selectedMonth}
           payrollDisbursedInternal={internalBudget}
           payrollDisbursedExternal={externalBudget}
+          allowanceMap={allowanceMap}
+          users={allowanceUsers}
+          allowanceSaving={allowanceSaving}
+          onSaveAllowance={saveAllowance}
           trackedEmployees={trackedPendingEmployees}
           onMarkReviewed={markPendingEmployeeReviewed}
           onRevertToPending={revertPendingEmployeeToPending}

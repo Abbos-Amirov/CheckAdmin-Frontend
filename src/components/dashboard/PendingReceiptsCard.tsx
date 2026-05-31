@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { useI18n } from '@/app/providers/I18nProvider';
 import type { Locale } from '@/i18n';
-import { useEmployeeMealAllowances } from '@/hooks/useEmployeeMealAllowances';
-import type { ApiUser } from '@/types/employeeMealAllowance.types';
+import type {
+  ApiUser,
+  EmployeeMealAllowance,
+  SaveEmployeeMealAllowanceRequest,
+} from '@/types/employeeMealAllowance.types';
 import type { Receipt } from '@/types/receipt.types';
 import type { WorkplaceType } from '@/types/employee.types';
 import { formatCurrency } from '@/utils/format';
@@ -31,6 +34,12 @@ type Props = {
   month: number;
   payrollDisbursedInternal: number | null;
   payrollDisbursedExternal: number | null;
+  allowanceMap: Map<string, EmployeeMealAllowance>;
+  users: ApiUser[];
+  allowanceSaving?: boolean;
+  onSaveAllowance: (
+    body: SaveEmployeeMealAllowanceRequest,
+  ) => Promise<EmployeeMealAllowance>;
   trackedEmployees: Map<string, TrackedEmployeeEntry>;
   onMarkReviewed: (receipt: Receipt, status: 'APPROVED' | 'REJECTED') => void;
   onRevertToPending: (receipt: Receipt) => void;
@@ -103,6 +112,10 @@ export function PendingReceiptsCard({
   month,
   payrollDisbursedInternal,
   payrollDisbursedExternal,
+  allowanceMap,
+  users,
+  allowanceSaving = false,
+  onSaveAllowance,
   trackedEmployees,
   onMarkReviewed,
   onRevertToPending,
@@ -117,13 +130,6 @@ export function PendingReceiptsCard({
   const [rejectModal, setRejectModal] = useState<RejectModalState | null>(null);
   const [rejectError, setRejectError] = useState('');
   const [savingEmployeeId, setSavingEmployeeId] = useState<string | null>(null);
-
-  const {
-    allowanceMap,
-    users,
-    saving,
-    saveAllowance,
-  } = useEmployeeMealAllowances(year, month);
 
   const employeeCards = useMemo(
     () => buildCardsFromTracked(trackedEmployees, receipts, year, month),
@@ -179,7 +185,7 @@ export function PendingReceiptsCard({
     if (!editor) return;
 
     try {
-      await saveAllowance({
+      await onSaveAllowance({
         employeeId: editor.mongoId,
         employeeName: editor.employeeName,
         year,
@@ -346,7 +352,7 @@ export function PendingReceiptsCard({
         initialBaseAmount={editor?.baseAmount ?? 0}
         initialExtraAmount={editor?.extraAmount ?? 0}
         initialReason={editor?.reason ?? ''}
-        saving={saving}
+        saving={allowanceSaving}
         saveError={saveError}
         onSave={handleSaveAllowance}
         onClose={closeAllowanceEditor}

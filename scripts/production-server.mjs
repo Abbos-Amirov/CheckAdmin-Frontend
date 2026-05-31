@@ -17,6 +17,7 @@ app.use(
   createProxyMiddleware({
     target: API_PROXY_TARGET,
     changeOrigin: true,
+    pathRewrite: (path) => `/api${path}`,
   }),
 );
 
@@ -25,6 +26,7 @@ app.use(
   createProxyMiddleware({
     target: API_PROXY_TARGET,
     changeOrigin: true,
+    pathRewrite: (path) => `/uploads${path}`,
   }),
 );
 
