@@ -7,6 +7,7 @@ export const ko: Record<TranslationKey, string> = {
   navAnalysis: '분석',
   dashboard: '대시보드',
   employees: '직원',
+  monthlyAllowances: '월 식비 배정',
   receipts: '영수증',
   reports: '보고서',
   settings: '설정',
@@ -38,10 +39,10 @@ export const ko: Record<TranslationKey, string> = {
   mealBudgetSaveError: '한도를 저장하지 못했습니다. 다시 시도하세요.',
   mealBudgetLoadError: '월 한도를 불러오지 못했습니다.',
   mealBudgetBackendOffline:
-    '백엔드 서버가 실행 중이 아닙니다. 포트 5000에서 백엔드를 시작하세요.',
+    '백엔드 서버가 실행 중이 아닙니다. 포트 5001에서 백엔드를 시작하세요.',
   checksLoadError: '영수증을 불러오지 못했습니다.',
   checksBackendOffline:
-    '백엔드 서버가 실행 중이 아닙니다. 포트 5000에서 백엔드를 시작하세요.',
+    '백엔드 서버가 실행 중이 아닙니다. 포트 5001에서 백엔드를 시작하세요.',
   checksApproveError: '영수증을 승인하지 못했습니다.',
   checksRejectError: '영수증을 거절하지 못했습니다.',
   checksMonthlyApproveError: '직원의 월 영수증을 승인하지 못했습니다.',
@@ -85,6 +86,9 @@ export const ko: Record<TranslationKey, string> = {
   employeesLoadError: '직원 목록을 불러오지 못했습니다.',
   employeesPhoneLabel: '전화번호',
   employeesEmpty: '직원이 없습니다.',
+  monthlyAllowancesPageHint:
+    '선택한 월의 모든 직원 식비 배정 금액을 입력하세요. 대시보드의 «이번 달 배정»과 동일한 API를 사용합니다.',
+  monthlyAllowancesGroupEmpty: '이 그룹에 직원이 없습니다.',
   loading: '불러오는 중…',
   receiptsPageTitle: '영수증',
   receiptsPageHint:

@@ -13,6 +13,7 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { EmployeeDetailPage } from '@/pages/employees/EmployeeDetailPage';
 import { EmployeesPage } from '@/pages/employees/EmployeesPage';
 import { ReceiptsPage } from '@/pages/receipts/ReceiptsPage';
+import { MonthlyAllowancesPage } from '@/pages/allowances/MonthlyAllowancesPage';
 import { ReportsPage } from '@/pages/reports/ReportsPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 
@@ -36,6 +37,7 @@ export function App() {
                     <Route index element={<DashboardPage />} />
                     <Route path="employees/:employeeId" element={<EmployeeDetailPage />} />
                     <Route path="employees" element={<EmployeesPage />} />
+                    <Route path="allowances" element={<MonthlyAllowancesPage />} />
                     <Route path="receipts" element={<ReceiptsPage />} />
                     <Route path="reports" element={<ReportsPage />} />
                     <Route path="settings" element={<SettingsPage />} />

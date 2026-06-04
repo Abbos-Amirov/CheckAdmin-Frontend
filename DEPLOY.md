@@ -5,16 +5,16 @@ Admin panel va backend bir serverda PM2 orqali ishlaydi.
 | Servis | Port | URL |
 |--------|------|-----|
 | Admin frontend | 3007 | http://38.247.134.248:3007 |
-| Backend API | 5000 | http://38.247.134.248:5000/api/health |
+| Backend API | 5001 | http://38.247.134.248:5001/api/health |
 
-Frontend `/api` va `/uploads` so'rovlarini `127.0.0.1:5000` ga proxy qiladi.
+Frontend `/api` va `/uploads` so'rovlarini `127.0.0.1:5001` ga proxy qiladi.
 
 ## Server talablari
 
 - Node.js 18+
 - PM2 (`npm install -g pm2`)
 - MongoDB (`MONGODB_URI`)
-- Firewall: **3007** va **5000** portlari ochiq
+- Firewall: **3007** va **5001** portlari ochiq
 
 ## 1. Backend (`check-backend`)
 
@@ -27,7 +27,7 @@ nano .env   # MONGODB_URI, JWT_SECRET, ADMIN_SIGNUP_SECRET, OPENAI_API_KEY
 `.env` da muhim qatorlar:
 
 ```env
-PORT=5000
+PORT=5001
 HOST=0.0.0.0
 CORS_ORIGINS=http://38.247.134.248:3007,http://localhost:3007
 ```
@@ -59,7 +59,7 @@ pm2 status
 ## Tekshirish
 
 ```bash
-curl http://127.0.0.1:5000/api/health
+curl http://127.0.0.1:5001/api/health
 curl -I http://127.0.0.1:3007
 ```
 

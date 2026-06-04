@@ -5,6 +5,7 @@ export const uz = {
   navAnalysis: 'TAHLIL',
   dashboard: 'Dashboard',
   employees: 'Ishchilar',
+  monthlyAllowances: 'Oylik ovqat puli',
   receipts: 'Cheklar',
   reports: 'Hisobotlar',
   settings: 'Sozlamalar',
@@ -36,10 +37,10 @@ export const uz = {
   mealBudgetSaveError: 'Limitni saqlab bo‘lmadi. Qayta urinib ko‘ring.',
   mealBudgetLoadError: 'Oylik limitlarni yuklab bo‘lmadi.',
   mealBudgetBackendOffline:
-    'Backend server ishlamayapti. Port 5000 da backendni ishga tushiring.',
+    'Backend server ishlamayapti. Port 5001 da backendni ishga tushiring.',
   checksLoadError: 'Cheklarni yuklab bo‘lmadi.',
   checksBackendOffline:
-    'Backend server ishlamayapti. Port 5000 da backendni ishga tushiring.',
+    'Backend server ishlamayapti. Port 5001 da backendni ishga tushiring.',
   checksApproveError: 'Chekni tasdiqlab bo‘lmadi.',
   checksRejectError: 'Chekni rad etib bo‘lmadi.',
   checksMonthlyApproveError: 'Ishchining oylik cheklarini tasdiqlab bo‘lmadi.',
@@ -83,6 +84,9 @@ export const uz = {
   employeesLoadError: 'Ishchilar ro‘yxatini yuklab bo‘lmadi.',
   employeesPhoneLabel: 'Telefon',
   employeesEmpty: 'Ishchilar topilmadi.',
+  monthlyAllowancesPageHint:
+    'Barcha ishchilar uchun tanlangan oyga ovqat puli summasini kiriting — dashboarddagi «Oy uchun ajratilgan» bilan bir xil API ishlatiladi.',
+  monthlyAllowancesGroupEmpty: 'Bu guruhda ishchi yo‘q.',
   loading: 'Yuklanmoqda…',
   receiptsPageTitle: 'Cheklar',
   receiptsPageHint:

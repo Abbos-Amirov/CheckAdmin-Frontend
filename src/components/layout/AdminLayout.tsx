@@ -8,6 +8,7 @@ import styles from './AdminLayout.module.scss';
 
 function titleKeyForPath(pathname: string): TranslationKey {
   if (pathname.startsWith('/employees')) return 'employees';
+  if (pathname.startsWith('/allowances')) return 'monthlyAllowances';
   if (pathname.startsWith('/receipts')) return 'receipts';
   if (pathname.startsWith('/reports')) return 'reports';
   if (pathname.startsWith('/settings')) return 'settings';

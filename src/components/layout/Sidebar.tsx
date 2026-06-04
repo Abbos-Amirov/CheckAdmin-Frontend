@@ -6,13 +6,14 @@ import styles from './Sidebar.module.scss';
 
 type NavItem = {
   to: string;
-  labelKey: 'dashboard' | 'employees' | 'receipts' | 'reports' | 'settings';
-  icon: 'grid' | 'user' | 'doc' | 'chart' | 'gear';
+  labelKey: 'dashboard' | 'employees' | 'monthlyAllowances' | 'receipts' | 'reports' | 'settings';
+  icon: 'grid' | 'user' | 'wallet' | 'doc' | 'chart' | 'gear';
 };
 
 const mainItems: NavItem[] = [
   { to: '/', labelKey: 'dashboard', icon: 'grid' },
   { to: '/employees', labelKey: 'employees', icon: 'user' },
+  { to: '/allowances', labelKey: 'monthlyAllowances', icon: 'wallet' },
   { to: '/receipts', labelKey: 'receipts', icon: 'doc' },
 ];
 
@@ -121,6 +122,22 @@ function NavIcon({ name }: { name: NavItem['icon'] }) {
             stroke="currentColor"
             strokeWidth="1.6"
           />
+        </svg>
+      );
+    case 'wallet':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a2 2 0 0 1 2 2v1.5H6A3 3 0 0 0 3 11.5V7.5Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+          <path
+            d="M3 11.5A3 3 0 0 1 6 8.5h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3v-4.5Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+          <circle cx="17" cy="13.5" r="1.25" fill="currentColor" />
         </svg>
       );
     case 'doc':

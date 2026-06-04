@@ -14,6 +14,8 @@ type Props = {
   initialReason: string;
   saving?: boolean;
   saveError?: string;
+  /** Oylik ovqat puli sahifasi: faqat asosiy summa maydoni. */
+  baseOnly?: boolean;
   onSave: (payload: {
     baseAmount: number;
     extraAmount: number;
@@ -59,6 +61,7 @@ export function EmployeeAllowancePopover({
   initialReason,
   saving = false,
   saveError = '',
+  baseOnly = false,
   onSave,
   onClose,
 }: Props) {
@@ -95,7 +98,7 @@ export function EmployeeAllowancePopover({
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [open, anchorRect, baseAmount, extraAmount, reason, error, saveError]);
+  }, [open, anchorRect, baseAmount, extraAmount, reason, error, saveError, baseOnly]);
 
   useEffect(() => {
     if (!open) return;
@@ -128,6 +131,15 @@ export function EmployeeAllowancePopover({
 
     if (parsedBase === null) {
       setError(t('employeeAllowanceBaseInvalid'));
+      return;
+    }
+
+    if (baseOnly) {
+      await onSave({
+        baseAmount: parsedBase,
+        extraAmount: 0,
+        reason: '',
+      });
       return;
     }
 
@@ -166,7 +178,9 @@ export function EmployeeAllowancePopover({
           <p id="employee-allowance-title" className={styles.title}>
             {t('employeeAllowanceTitle', { name: employeeName })}
           </p>
-          <p className={styles.subtitle}>{t('employeeAllowancePrompt')}</p>
+          <p className={styles.subtitle}>
+            {baseOnly ? t('payrollDisbursementPromptShort') : t('employeeAllowancePrompt')}
+          </p>
 
           <label className={styles.fieldLabel} htmlFor="employee-allowance-base">
             {t('employeeAllowanceBaseLabel')}
@@ -188,38 +202,42 @@ export function EmployeeAllowancePopover({
             <span className={styles.suffix}>{t('currency')}</span>
           </div>
 
-          <label className={styles.fieldLabel} htmlFor="employee-allowance-extra">
-            {t('employeeAllowanceExtraLabel')}
-          </label>
-          <div className={styles.inputWrap}>
-            <input
-              id="employee-allowance-extra"
-              className={styles.input}
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              value={extraAmount}
-              onChange={(event) => setExtraAmount(event.target.value)}
-            />
-            <span className={styles.suffix}>{t('currency')}</span>
-          </div>
+          {!baseOnly ? (
+            <>
+              <label className={styles.fieldLabel} htmlFor="employee-allowance-extra">
+                {t('employeeAllowanceExtraLabel')}
+              </label>
+              <div className={styles.inputWrap}>
+                <input
+                  id="employee-allowance-extra"
+                  className={styles.input}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={extraAmount}
+                  onChange={(event) => setExtraAmount(event.target.value)}
+                />
+                <span className={styles.suffix}>{t('currency')}</span>
+              </div>
 
-          <label className={styles.fieldLabel} htmlFor="employee-allowance-reason">
-            {t('employeeAllowanceReasonLabel')}
-          </label>
-          <textarea
-            id="employee-allowance-reason"
-            className={styles.textarea}
-            rows={2}
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder={t('employeeAllowanceReasonPlaceholder')}
-          />
+              <label className={styles.fieldLabel} htmlFor="employee-allowance-reason">
+                {t('employeeAllowanceReasonLabel')}
+              </label>
+              <textarea
+                id="employee-allowance-reason"
+                className={styles.textarea}
+                rows={2}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder={t('employeeAllowanceReasonPlaceholder')}
+              />
 
-          {previewTotal !== null ? (
-            <p className={styles.previewTotal}>
-              {t('employeeAllowanceTotalLabel')}: {previewTotal.toLocaleString()} {t('currency')}
-            </p>
+              {previewTotal !== null ? (
+                <p className={styles.previewTotal}>
+                  {t('employeeAllowanceTotalLabel')}: {previewTotal.toLocaleString()} {t('currency')}
+                </p>
+              ) : null}
+            </>
           ) : null}
 
           {error ? (
