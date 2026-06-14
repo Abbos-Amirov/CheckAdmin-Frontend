@@ -21,6 +21,10 @@ export type ApiCheck = {
   month: string;
   status: ApiCheckStatus;
   adminNote?: string | null;
+  rejectReason?: string | null;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  reviewedBy?: string | null;
   createdAt?: string;
 };
 

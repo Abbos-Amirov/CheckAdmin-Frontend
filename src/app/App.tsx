@@ -3,6 +3,7 @@ import { AuthProvider } from '@/app/providers/AuthProvider';
 import { I18nProvider } from '@/app/providers/I18nProvider';
 import { ReceiptsProvider } from '@/app/providers/ReceiptsProvider';
 import { ThemeProvider } from '@/app/providers/ThemeProvider';
+import { ToastProvider } from '@/app/providers/ToastProvider';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { PublicRoute } from '@/components/auth/PublicRoute';
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -21,34 +22,36 @@ export function App() {
   return (
     <ThemeProvider>
       <I18nProvider>
-        <AuthProvider>
-          <ReceiptsProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route element={<PublicRoute />}>
-                  <Route element={<AuthLayout />}>
-                    <Route path="login" element={<LoginPage />} />
-                    <Route path="signup" element={<SignupPage />} />
+        <ToastProvider>
+          <AuthProvider>
+            <ReceiptsProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<PublicRoute />}>
+                    <Route element={<AuthLayout />}>
+                      <Route path="login" element={<LoginPage />} />
+                      <Route path="signup" element={<SignupPage />} />
+                    </Route>
                   </Route>
-                </Route>
 
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<AdminLayout />}>
-                    <Route index element={<DashboardPage />} />
-                    <Route path="employees/:employeeId" element={<EmployeeDetailPage />} />
-                    <Route path="employees" element={<EmployeesPage />} />
-                    <Route path="allowances" element={<MonthlyAllowancesPage />} />
-                    <Route path="receipts" element={<ReceiptsPage />} />
-                    <Route path="reports" element={<ReportsPage />} />
-                    <Route path="settings" element={<SettingsPage />} />
+                  <Route element={<ProtectedRoute />}>
+                    <Route element={<AdminLayout />}>
+                      <Route index element={<DashboardPage />} />
+                      <Route path="employees/:employeeId" element={<EmployeeDetailPage />} />
+                      <Route path="employees" element={<EmployeesPage />} />
+                      <Route path="allowances" element={<MonthlyAllowancesPage />} />
+                      <Route path="receipts" element={<ReceiptsPage />} />
+                      <Route path="reports" element={<ReportsPage />} />
+                      <Route path="settings" element={<SettingsPage />} />
+                    </Route>
                   </Route>
-                </Route>
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </BrowserRouter>
-          </ReceiptsProvider>
-        </AuthProvider>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </ReceiptsProvider>
+          </AuthProvider>
+        </ToastProvider>
       </I18nProvider>
     </ThemeProvider>
   );

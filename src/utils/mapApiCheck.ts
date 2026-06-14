@@ -41,6 +41,7 @@ export function mapApiCheckToReceipt(check: ApiCheck): Receipt {
     status: mapStatus(check.status),
     createdAt,
     month: check.month,
+    rejectReason: check.rejectReason ?? null,
     lineItems,
     payment: {
       method: check.cardInfo ? '카드' : '—',

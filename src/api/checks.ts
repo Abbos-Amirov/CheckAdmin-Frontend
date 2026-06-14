@@ -63,25 +63,19 @@ export async function fetchEmployeeChecks(
   return unwrapEnvelope(response);
 }
 
-export async function approveAdminCheck(id: string, token: string): Promise<ApiCheck> {
-  const response = await apiFetch<ApiEnvelope<{ check: ApiCheck }>>(
-    `/admin/checks/${id}/approve`,
-    { method: 'PATCH' },
-    token,
-  );
-  return unwrapEnvelope(response).check;
-}
+export type CheckReviewStatus = 'approved' | 'rejected' | 'pending';
 
-export async function rejectAdminCheck(
+export async function reviewAdminCheck(
   id: string,
   token: string,
-  adminNote?: string,
+  status: CheckReviewStatus,
+  rejectReason?: string,
 ): Promise<ApiCheck> {
   const response = await apiFetch<ApiEnvelope<{ check: ApiCheck }>>(
-    `/admin/checks/${id}/reject`,
+    `/admin/checks/${id}/status`,
     {
       method: 'PATCH',
-      body: JSON.stringify(adminNote ? { adminNote } : {}),
+      body: JSON.stringify(rejectReason ? { status, rejectReason } : { status }),
     },
     token,
   );

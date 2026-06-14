@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchEmployeeChecks, fetchAdminChecks } from '@/api/checks';
+import { fetchEmployeeChecks, fetchAdminChecks, reviewAdminCheck, type CheckReviewStatus } from '@/api/checks';
 import { fetchAllUsers } from '@/api/users';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useI18n } from '@/app/providers/I18nProvider';
@@ -16,7 +16,7 @@ export type ReceiptWorkerGroup = {
   receipts: Receipt[];
 };
 
-function groupReceiptsByEmployee(receipts: Receipt[]): ReceiptWorkerGroup[] {
+export function groupReceiptsByEmployee(receipts: Receipt[]): ReceiptWorkerGroup[] {
   const map = new Map<string, ReceiptWorkerGroup>();
   for (const receipt of receipts) {
     const existing = map.get(receipt.employeeId);
@@ -138,6 +138,17 @@ export function useReceiptsPage(year: number, month: number) {
     void loadChecks();
   }, [loadWorkers, loadChecks]);
 
+  const reviewCheck = useCallback(
+    async (checkId: string, status: CheckReviewStatus, rejectReason?: string) => {
+      if (!token) throw new Error('NO_TOKEN');
+      const updated = await reviewAdminCheck(checkId, token, status, rejectReason);
+      const mapped = mapApiCheckToReceipt(updated);
+      setReceipts((prev) => prev.map((r) => (r.id === mapped.id ? mapped : r)));
+      return mapped;
+    },
+    [token],
+  );
+
   return {
     workers,
     receipts,
@@ -148,5 +159,6 @@ export function useReceiptsPage(year: number, month: number) {
     error,
     reload,
     countsByMonth,
+    reviewCheck,
   };
 }

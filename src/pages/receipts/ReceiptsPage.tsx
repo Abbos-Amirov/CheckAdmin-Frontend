@@ -1,12 +1,17 @@
 import { useMemo, useState } from 'react';
-import type { Locale } from '@/i18n';
+import type { CheckReviewStatus } from '@/api/checks';
+import { ApiError } from '@/api/client';
+import type { Locale, TranslationKey } from '@/i18n';
 import { useI18n } from '@/app/providers/I18nProvider';
+import { useToast } from '@/app/providers/ToastProvider';
 import type { Receipt, ReceiptStatus } from '@/types/receipt.types';
 import { formatCurrency, formatDashboardMonth } from '@/utils/format';
 import { Card } from '@/components/common/Card';
+import { ImageLightbox } from '@/components/common/ImageLightbox';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
+import { CheckRejectModal } from '@/components/receipts/CheckRejectModal';
 import { ReceiptsMonthDownloadBar } from '@/components/receipts/ReceiptsMonthDownloadBar';
-import { useReceiptsPage } from '@/hooks/useReceiptsPage';
+import { groupReceiptsByEmployee, useReceiptsPage } from '@/hooks/useReceiptsPage';
 import {
   DEMO_CALENDAR_DEFAULT_YEAR,
   DEMO_RECEIPTS_MONTH,
@@ -17,32 +22,122 @@ function totalReceiptAmount(list: Receipt[]): number {
   return list.reduce((sum, r) => sum + r.amount, 0);
 }
 
+const STATUS_FILTERS = ['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
 export function ReceiptsPage() {
   const { t, locale } = useI18n();
+  const { showToast } = useToast();
   const [selectedYear, setSelectedYear] = useState(DEMO_CALENDAR_DEFAULT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState(DEMO_RECEIPTS_MONTH);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<Receipt | null>(null);
+  const [rejectSaving, setRejectSaving] = useState(false);
+  const [rejectError, setRejectError] = useState('');
+  const [actioningId, setActioningId] = useState<string | null>(null);
+  const [actioningStatus, setActioningStatus] = useState<CheckReviewStatus | null>(null);
 
   const {
     workers,
     receipts,
-    groups,
     selectedEmployeeId,
     setSelectedEmployeeId,
     loading,
     error,
     reload,
     countsByMonth,
+    reviewCheck,
   } = useReceiptsPage(selectedYear, selectedMonth);
 
+  const resolveActionErrorMessage = (err: unknown, fallbackKey: TranslationKey): string => {
+    if (err instanceof ApiError && err.message !== 'NETWORK_ERROR') return err.message;
+    return t(fallbackKey);
+  };
+
+  const handleApprove = async (receipt: Receipt) => {
+    setActioningId(receipt.id);
+    setActioningStatus('approved');
+    try {
+      await reviewCheck(receipt.id, 'approved');
+      showToast(t('receiptActionApproveSuccess', { name: receipt.employeeName }), 'success');
+    } catch (err) {
+      showToast(resolveActionErrorMessage(err, 'checksApproveError'), 'error');
+    } finally {
+      setActioningId(null);
+      setActioningStatus(null);
+    }
+  };
+
+  const handleRevert = async (receipt: Receipt) => {
+    setActioningId(receipt.id);
+    setActioningStatus('pending');
+    try {
+      await reviewCheck(receipt.id, 'pending');
+      showToast(t('receiptActionRevertSuccess', { name: receipt.employeeName }), 'success');
+    } catch (err) {
+      showToast(resolveActionErrorMessage(err, 'receiptActionRevertError'), 'error');
+    } finally {
+      setActioningId(null);
+      setActioningStatus(null);
+    }
+  };
+
+  const openRejectModal = (receipt: Receipt) => {
+    setRejectError('');
+    setRejectTarget(receipt);
+  };
+
+  const handleRejectConfirm = async (reason: string) => {
+    if (!rejectTarget) return;
+    setRejectSaving(true);
+    setRejectError('');
+    setActioningId(rejectTarget.id);
+    setActioningStatus('rejected');
+    try {
+      await reviewCheck(rejectTarget.id, 'rejected', reason);
+      showToast(t('receiptActionRejectSuccess', { name: rejectTarget.employeeName }), 'success');
+      setRejectTarget(null);
+    } catch (err) {
+      setRejectError(resolveActionErrorMessage(err, 'checksRejectError'));
+    } finally {
+      setRejectSaving(false);
+      setActioningId(null);
+      setActioningStatus(null);
+    }
+  };
+
+  const filteredReceipts = useMemo(() => {
+    let list = receipts;
+    if (statusFilter !== 'ALL') {
+      list = list.filter((r) => r.status === statusFilter);
+    }
+    const query = searchTerm.trim().toLowerCase();
+    if (query) {
+      list = list.filter(
+        (r) =>
+          r.storeName.toLowerCase().includes(query) ||
+          r.employeeName.toLowerCase().includes(query) ||
+          r.receiptCode.toLowerCase().includes(query),
+      );
+    }
+    return list;
+  }, [receipts, statusFilter, searchTerm]);
+
+  const groups = useMemo(() => groupReceiptsByEmployee(filteredReceipts), [filteredReceipts]);
+
   const monthTotals = useMemo(() => {
-    const amount = totalReceiptAmount(receipts);
-    return { count: receipts.length, amount };
-  }, [receipts]);
+    const amount = totalReceiptAmount(filteredReceipts);
+    return { count: filteredReceipts.length, amount };
+  }, [filteredReceipts]);
 
   const periodLabelDate = useMemo(
     () => new Date(selectedYear, selectedMonth - 1, 1),
     [selectedYear, selectedMonth],
   );
+
+  const isFiltering = statusFilter !== 'ALL' || searchTerm.trim().length > 0;
 
   return (
     <div className={styles.page}>
@@ -77,6 +172,35 @@ export function ReceiptsPage() {
             </option>
           ))}
         </select>
+
+        <label className={styles.filterLabel} htmlFor="receipts-status-filter">
+          {t('receiptsStatusFilterLabel')}
+        </label>
+        <select
+          id="receipts-status-filter"
+          className={styles.filterSelect}
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+          disabled={loading}
+        >
+          <option value="ALL">{t('receiptsStatusAll')}</option>
+          <option value="PENDING">{t('statusPending')}</option>
+          <option value="APPROVED">{t('statusApproved')}</option>
+          <option value="REJECTED">{t('statusRejected')}</option>
+        </select>
+
+        <label className={styles.filterLabel} htmlFor="receipts-search">
+          {t('receiptsSearchLabel')}
+        </label>
+        <input
+          id="receipts-search"
+          type="search"
+          className={styles.searchInput}
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder={t('receiptsSearchPlaceholder')}
+          disabled={loading}
+        />
       </div>
 
       {error ? (
@@ -117,7 +241,7 @@ export function ReceiptsPage() {
             </div>
           </div>
 
-          {!selectedEmployeeId ? (
+          {!selectedEmployeeId && !isFiltering ? (
             <Card className={styles.allDownloadsCard}>
               <h3 className={styles.allDownloadsTitle}>
                 {t('receiptsAllEmployeesDownloadTitle')}
@@ -156,27 +280,54 @@ export function ReceiptsPage() {
                 <div className={styles.horizontalStrip} role="list">
                   {g.receipts.map((r) => (
                     <div key={r.id} className={styles.stripItem} role="listitem">
-                      <ReceiptDetailCard receipt={r} variant="strip" />
+                      <ReceiptDetailCard
+                        receipt={r}
+                        variant="strip"
+                        onImageClick={setLightboxSrc}
+                        onApprove={handleApprove}
+                        onReject={openRejectModal}
+                        onRevert={handleRevert}
+                        busyAction={actioningId === r.id ? actioningStatus : null}
+                      />
                     </div>
                   ))}
                 </div>
-                <ReceiptsMonthDownloadBar
-                  receipts={g.receipts}
-                  year={selectedYear}
-                  month={selectedMonth}
-                  singleEmployeeName={g.employeeName}
-                  variant="worker"
-                  className={styles.workerDownloads}
-                />
+                {!isFiltering ? (
+                  <ReceiptsMonthDownloadBar
+                    receipts={g.receipts}
+                    year={selectedYear}
+                    month={selectedMonth}
+                    singleEmployeeName={g.employeeName}
+                    variant="worker"
+                    className={styles.workerDownloads}
+                  />
+                ) : null}
               </Card>
             ))}
           </div>
         </>
       ) : (
         <Card className={styles.emptyCard}>
-          <p className={styles.emptyText}>{t('receiptsNoInMonth')}</p>
+          <p className={styles.emptyText}>
+            {isFiltering ? t('receiptsNoSearchResults') : t('receiptsNoInMonth')}
+          </p>
         </Card>
       )}
+
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+
+      <CheckRejectModal
+        open={rejectTarget !== null}
+        storeName={rejectTarget?.storeName ?? ''}
+        saving={rejectSaving}
+        error={rejectError}
+        onConfirm={handleRejectConfirm}
+        onClose={() => {
+          if (rejectSaving) return;
+          setRejectTarget(null);
+          setRejectError('');
+        }}
+      />
     </div>
   );
 }
@@ -184,12 +335,23 @@ export function ReceiptsPage() {
 function ReceiptDetailCard({
   receipt,
   variant,
+  onImageClick,
+  onApprove,
+  onReject,
+  onRevert,
+  busyAction,
 }: {
   receipt: Receipt;
   variant: 'strip';
+  onImageClick: (src: string) => void;
+  onApprove: (receipt: Receipt) => void;
+  onReject: (receipt: Receipt) => void;
+  onRevert: (receipt: Receipt) => void;
+  busyAction: CheckReviewStatus | null;
 }) {
   const { t, locale } = useI18n();
   const strip = variant === 'strip';
+  const busy = busyAction !== null;
 
   return (
     <div className={`${styles.block} ${strip ? styles.blockStrip : ''}`}>
@@ -197,14 +359,21 @@ function ReceiptDetailCard({
         <div className={styles.scan}>
           <div className={styles.scanFrame}>
             {receipt.imageUrl ? (
-              <img
-                src={receipt.imageUrl}
-                alt=""
-                className={styles.scanImg}
-                width={240}
-                height={350}
-                loading="lazy"
-              />
+              <button
+                type="button"
+                className={styles.scanImgBtn}
+                onClick={() => onImageClick(receipt.imageUrl)}
+                aria-label={t('receiptsImageZoomAria')}
+              >
+                <img
+                  src={receipt.imageUrl}
+                  alt=""
+                  className={styles.scanImg}
+                  width={240}
+                  height={350}
+                  loading="lazy"
+                />
+              </button>
             ) : (
               <div className={styles.scanPlaceholder} aria-hidden>
                 {t('receiptsNoImage')}
@@ -238,6 +407,47 @@ function ReceiptDetailCard({
               </div>
               <StatusBadge status={receipt.status} />
             </div>
+
+            {receipt.status === 'REJECTED' && receipt.rejectReason ? (
+              <div className={styles.rejectReasonBox} role="note">
+                <span className={styles.rejectReasonLabel}>{t('receiptRejectReasonLabel')}</span>
+                <p className={styles.rejectReasonText}>{receipt.rejectReason}</p>
+              </div>
+            ) : null}
+
+            <div className={styles.actionsBar} role="group" aria-label={t('receiptActionsAria')}>
+              {receipt.status !== 'APPROVED' ? (
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${styles.actionApprove}`}
+                  onClick={() => onApprove(receipt)}
+                  disabled={busy}
+                >
+                  {busyAction === 'approved' ? '…' : t('receiptActionApprove')}
+                </button>
+              ) : null}
+              {receipt.status !== 'REJECTED' ? (
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${styles.actionReject}`}
+                  onClick={() => onReject(receipt)}
+                  disabled={busy}
+                >
+                  {busyAction === 'rejected' ? '…' : t('receiptActionReject')}
+                </button>
+              ) : null}
+              {receipt.status !== 'PENDING' ? (
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${styles.actionRevert}`}
+                  onClick={() => onRevert(receipt)}
+                  disabled={busy}
+                >
+                  {busyAction === 'pending' ? '…' : t('receiptActionRevert')}
+                </button>
+              ) : null}
+            </div>
+
             <h4 className={styles.metaPurchasesTitle}>{t('receiptItemsTitle')}</h4>
           </div>
 

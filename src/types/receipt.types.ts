@@ -34,6 +34,8 @@ export interface Receipt {
   createdAt: string;
   /** Backend oy kaliti, masalan: 2026-05 */
   month?: string;
+  /** Rad etish sababi (status REJECTED bo'lganda) */
+  rejectReason?: string | null;
   lineItems: ReceiptLineItem[];
   payment: ReceiptPayment;
   employeeWorkplace?: WorkplaceType;
