@@ -4,6 +4,30 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { Card } from '@/components/common/Card';
 import styles from './EmployeesPage.module.scss';
 
+function IdIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="8.5" cy="12" r="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M13.5 9.5h6M13.5 14.5h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M6.6 10.8c1.5 3 3.6 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.3 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1v3.7c0 .6-.4 1-1 1C10.7 21.2 2.8 13.3 2.8 3.7c0-.6.4-1 1-1H7.5c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.3 1.1L6.6 10.8Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function EmployeePhoto({
   photoUrl,
   fullName,
@@ -82,16 +106,31 @@ export function EmployeesPage() {
                       : t('workplaceExternalShort')}
                   </span>
                 </div>
-                <div className={styles.code}>
-                  {t('authEmployeeIdLabel')}: {emp.employeeCode ?? '—'}
+                <div className={styles.chips}>
+                  <span className={styles.chip}>
+                    <span className={styles.chipIcon}>
+                      <IdIcon />
+                    </span>
+                    <span className={styles.chipText}>
+                      <span className={styles.chipLabel}>{t('authEmployeeIdLabel')}</span>
+                      <span className={styles.chipValue}>{emp.employeeCode ?? '—'}</span>
+                    </span>
+                  </span>
+                  {emp.phone ? (
+                    <span className={styles.chip}>
+                      <span className={styles.chipIcon}>
+                        <PhoneIcon />
+                      </span>
+                      <span className={styles.chipText}>
+                        <span className={styles.chipLabel}>{t('employeesPhoneLabel')}</span>
+                        <span className={styles.chipValue}>{emp.phone}</span>
+                      </span>
+                    </span>
+                  ) : null}
                 </div>
-                {emp.phone ? (
-                  <div className={styles.phone}>
-                    {t('employeesPhoneLabel')}: {emp.phone}
-                  </div>
-                ) : null}
                 <div className={styles.status}>
                   <span className={`${styles.statusBadge} ${styles.statusOk}`}>
+                    <span className={styles.statusDot} aria-hidden />
                     {t('statusActiveLabel')}
                   </span>
                 </div>
