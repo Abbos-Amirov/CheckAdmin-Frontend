@@ -82,6 +82,9 @@ export const uz = {
   currency: 'won',
   approved: 'Tasdiqlangan',
   reportsSent: 'hisobot yuborildi',
+  approvedChecksLabel: 'Tasdiqlangan cheklar',
+  approvedEmployeesLabel: 'Tasdiqlangan ishchilar',
+  approvedEmployeesHint: 'Kimlar — bosing',
   employeesPageTitle: 'Ishchilar',
   employeesStatus: 'Holat',
   employeesPageHint:

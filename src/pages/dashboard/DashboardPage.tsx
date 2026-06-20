@@ -10,6 +10,7 @@ import { usePendingReceiptsTracker } from '@/hooks/usePendingReceiptsTracker';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
 import { PayrollDisbursementPopover } from '@/components/dashboard/PayrollDisbursementPopover';
 import { PendingReceiptsCard } from '@/components/dashboard/PendingReceiptsCard';
+import { ApprovedEmployeesStatCard } from '@/components/dashboard/ApprovedEmployeesStatCard';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { formatCompactMonthlySum, formatCurrency } from '@/utils/format';
 import {
@@ -17,6 +18,119 @@ import {
   DEMO_RECEIPTS_MONTH,
 } from '@/utils/receiptMonthFilter';
 import styles from './DashboardPage.module.scss';
+
+function PeopleIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M17 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.5V20M21 20v-1.5a3.2 3.2 0 0 0-2.5-3.12M15.5 7.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0ZM16 4.16a3.5 3.5 0 0 1 0 6.68"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function HourglassIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M6 2h12M6 22h12M7 2c0 5 10 5 10 10s-10 5-10 10M17 2c0 5-10 5-10 10s10 5 10 10"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function WalletIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M17 14h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M21 11.5v.5a9 9 0 1 1-5.3-8.2"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m9 11 3 3 9-9"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PeopleCheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M11 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-3A3.5 3.5 0 0 0 1 18.5V20M9.5 7.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m15 12 2 2 4-4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function BuildingIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16M4 21h16M12 21V9a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v12M8 8h0M8 12h0M8 16h0M16 12h0M16 16h0"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function TruckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M2 7h11v9H2zM13 11h4l4 3v2h-8zM5.5 19.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM17.5 19.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 type PayrollEditorKind = 'internal' | 'external';
 
@@ -97,13 +211,13 @@ export function DashboardPage() {
     return { total: employees.length, internal, external };
   }, [employees]);
 
-  const periodTotal = useMemo(
-    () => periodReceipts.reduce((sum, r) => sum + r.amount, 0),
+  const approvedCount = useMemo(
+    () => periodReceipts.filter((r) => r.status === 'APPROVED').length,
     [periodReceipts],
   );
 
-  const approvedCount = useMemo(
-    () => periodReceipts.filter((r) => r.status === 'APPROVED').length,
+  const periodTotal = useMemo(
+    () => periodReceipts.reduce((sum, r) => sum + r.amount, 0),
     [periodReceipts],
   );
 
@@ -204,6 +318,7 @@ export function DashboardPage() {
 
       <section className={styles.stats} aria-label={t('dashboard')}>
         <StatCard
+          icon={<PeopleIcon />}
           label={t('totalEmployees')}
           value={employeesLoading ? '…' : employeeStats.total}
           hint={t('dashboardEmployeesBreakdown', {
@@ -212,23 +327,32 @@ export function DashboardPage() {
           })}
         />
         <StatCard
+          icon={<HourglassIcon />}
           label={t('pendingReceiptsStat')}
           value={checksLoading ? '…' : pendingCount}
           hint={t('dashboardUploadedChecksHint', { count: uploadedChecksCount })}
           tone="warning"
         />
         <StatCard
+          icon={<WalletIcon />}
           label={t('monthlyTotal')}
           value={`${formatCompactMonthlySum(periodTotal, locale)}`}
           hint={t('currency')}
         />
         <StatCard
-          label={t('approved')}
-          value={approvedCount}
+          icon={<CheckCircleIcon />}
+          label={t('approvedChecksLabel')}
+          value={checksLoading ? '…' : approvedCount}
           hint={t('reportsSent')}
           tone="success"
         />
+        <ApprovedEmployeesStatCard
+          icon={<PeopleCheckIcon />}
+          receipts={periodReceipts}
+          loading={checksLoading}
+        />
         <StatCard
+          icon={<BuildingIcon />}
           label={t('payrollInternal')}
           value={formatBudgetValue(internalBudget)}
           hint={`${t('payrollMonthHint')} · ${t('currency')}`}
@@ -236,6 +360,7 @@ export function DashboardPage() {
           clickAriaLabel={t('payrollDisbursementEditAria', { label: t('payrollInternal') })}
         />
         <StatCard
+          icon={<TruckIcon />}
           label={t('payrollExternal')}
           value={formatBudgetValue(externalBudget)}
           hint={`${t('payrollMonthHint')} · ${t('currency')}`}

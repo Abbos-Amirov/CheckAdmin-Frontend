@@ -84,6 +84,9 @@ export const ko: Record<TranslationKey, string> = {
   currency: '원',
   approved: '승인됨',
   reportsSent: '보고서 전송됨',
+  approvedChecksLabel: '승인된 영수증',
+  approvedEmployeesLabel: '승인된 직원',
+  approvedEmployeesHint: '누구인지 보기 — 클릭',
   employeesPageTitle: '직원',
   employeesStatus: '상태',
   employeesPageHint:

@@ -9,6 +9,7 @@ type Props = {
   value: ReactNode;
   hint?: string;
   tone?: Tone;
+  icon?: ReactNode;
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   clickAriaLabel?: string;
 };
@@ -18,16 +19,24 @@ export function StatCard({
   value,
   hint,
   tone = 'default',
+  icon,
   onClick,
   clickAriaLabel,
 }: Props) {
   const body = (
     <>
-      <div className={styles.label}>{label}</div>
+      <div className={styles.head}>
+        {icon ? (
+          <span className={`${styles.iconBadge} ${tone !== 'default' ? styles[tone] : ''}`}>
+            {icon}
+          </span>
+        ) : null}
+        <div className={styles.label}>{label}</div>
+      </div>
       <div className={`${styles.value} ${tone !== 'default' ? styles[tone] : ''}`}>
         {value}
       </div>
-      {hint ? <div className={styles.hint}>{hint}</div> : null}
+      {hint ? <div className={styles.hintPill}>{hint}</div> : null}
     </>
   );
 
