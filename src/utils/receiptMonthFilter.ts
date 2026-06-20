@@ -1,6 +1,7 @@
-/** Demo: yil oralig‘i (dashboard, cheklar va boshqa sahifalar). */
-export const DEMO_RECEIPTS_YEAR = 2026;
-export const DEMO_RECEIPTS_MONTH = 5;
+/** Sahifalar ochilganda by default ko'rsatiladigan yil/oy — har doim joriy sana. */
+const now = new Date();
+export const DEMO_RECEIPTS_YEAR = now.getFullYear();
+export const DEMO_RECEIPTS_MONTH = now.getMonth() + 1;
 export const DEMO_CALENDAR_DEFAULT_YEAR = DEMO_RECEIPTS_YEAR;
 export const DEMO_CALENDAR_YEAR_END = 2036;
 

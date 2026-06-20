@@ -16,13 +16,14 @@ function applyMonthlyStatusToReceipts(
   employeeId: string,
   year: number,
   month: number,
-  status: 'APPROVED' | 'REJECTED',
+  status: 'APPROVED' | 'REJECTED' | 'PENDING',
 ): Receipt[] {
   const key = monthKey(year, month);
+  const fromStatuses = status === 'PENDING' ? ['APPROVED', 'REJECTED'] : ['PENDING'];
   return receipts.map((receipt) =>
     receipt.employeeId === employeeId &&
     receipt.month === key &&
-    receipt.status === 'PENDING'
+    fromStatuses.includes(receipt.status)
       ? { ...receipt, status }
       : receipt,
   );
@@ -43,7 +44,8 @@ export function useAdminChecks(year: number, month: number) {
       fallbackKey:
         | 'checksLoadError'
         | 'checksMonthlyApproveError'
-        | 'checksMonthlyRejectError',
+        | 'checksMonthlyRejectError'
+        | 'checksMonthlyRevertError',
     ) => {
       if (err instanceof ApiError && err.status === 0) {
         return t('checksBackendOffline');
@@ -159,6 +161,42 @@ export function useAdminChecks(year: number, month: number) {
     [token, year, month, load, resolveErrorMessage],
   );
 
+  const revertEmployeeMonth = useCallback(
+    async (employeeId: string) => {
+      if (!token) {
+        throw new Error('Auth token missing');
+      }
+
+      setActionSaving(true);
+      try {
+        await patchMonthlyReceiptStatus(
+          {
+            employeeId,
+            year,
+            month,
+            status: 'PENDING',
+          },
+          token,
+        );
+        setActionError(null);
+        setReceipts((prev) =>
+          applyMonthlyStatusToReceipts(prev, employeeId, year, month, 'PENDING'),
+        );
+        try {
+          await load({ silent: true });
+        } catch (loadErr) {
+          console.warn('Checks reload after revert failed:', loadErr);
+        }
+      } catch (err) {
+        setActionError(resolveErrorMessage(err, 'checksMonthlyRevertError'));
+        throw err;
+      } finally {
+        setActionSaving(false);
+      }
+    },
+    [token, year, month, load, resolveErrorMessage],
+  );
+
   return {
     receipts,
     loading,
@@ -167,6 +205,7 @@ export function useAdminChecks(year: number, month: number) {
     actionSaving,
     approveEmployeeMonth,
     rejectEmployeeMonth,
+    revertEmployeeMonth,
     reload: load,
   };
 }

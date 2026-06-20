@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { CheckReviewStatus } from '@/api/checks';
 import { ApiError } from '@/api/client';
 import type { Locale, TranslationKey } from '@/i18n';
@@ -28,8 +29,16 @@ type StatusFilter = (typeof STATUS_FILTERS)[number];
 export function ReceiptsPage() {
   const { t, locale } = useI18n();
   const { showToast } = useToast();
-  const [selectedYear, setSelectedYear] = useState(DEMO_CALENDAR_DEFAULT_YEAR);
-  const [selectedMonth, setSelectedMonth] = useState(DEMO_RECEIPTS_MONTH);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const y = Number(searchParams.get('year'));
+    return Number.isInteger(y) && y >= 2000 && y <= 2100 ? y : DEMO_CALENDAR_DEFAULT_YEAR;
+  });
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const m = Number(searchParams.get('month'));
+    return Number.isInteger(m) && m >= 1 && m <= 12 ? m : DEMO_RECEIPTS_MONTH;
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -49,7 +58,14 @@ export function ReceiptsPage() {
     reload,
     countsByMonth,
     reviewCheck,
-  } = useReceiptsPage(selectedYear, selectedMonth);
+  } = useReceiptsPage(selectedYear, selectedMonth, searchParams.get('employeeId'));
+
+  useEffect(() => {
+    if (searchParams.toString()) {
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resolveActionErrorMessage = (err: unknown, fallbackKey: TranslationKey): string => {
     if (err instanceof ApiError && err.message !== 'NETWORK_ERROR') return err.message;

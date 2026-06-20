@@ -13,7 +13,7 @@ function unwrapEnvelope<T>(payload: ApiEnvelope<T>): T {
   return payload as T;
 }
 
-export type MonthlyReceiptStatus = 'APPROVED' | 'REJECTED';
+export type MonthlyReceiptStatus = 'APPROVED' | 'REJECTED' | 'PENDING';
 
 export type PatchMonthlyReceiptStatusRequest = {
   employeeId: string;

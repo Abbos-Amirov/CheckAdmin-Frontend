@@ -8,7 +8,6 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useMealBudgets } from '@/hooks/useMealBudgets';
 import { usePendingReceiptsTracker } from '@/hooks/usePendingReceiptsTracker';
 import { YearMonthToolbar } from '@/components/common/YearMonthToolbar';
-import { EmployeeProgressCard } from '@/components/dashboard/EmployeeProgressCard';
 import { PayrollDisbursementPopover } from '@/components/dashboard/PayrollDisbursementPopover';
 import { PendingReceiptsCard } from '@/components/dashboard/PendingReceiptsCard';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -50,6 +49,7 @@ export function DashboardPage() {
     actionSaving: checksActionSaving,
     approveEmployeeMonth,
     rejectEmployeeMonth,
+    revertEmployeeMonth,
     reload: reloadChecks,
   } = useAdminChecks(selectedYear, selectedMonth);
 
@@ -73,12 +73,9 @@ export function DashboardPage() {
     users: allowanceUsers,
     saving: allowanceSaving,
     saveAllowance,
-    loading: allowancesLoading,
     error: allowancesLoadError,
     reload: reloadAllowances,
   } = useEmployeeMealAllowances(selectedYear, selectedMonth);
-
-  const submittedEmployeesLoading = employeesLoading || allowancesLoading || checksLoading;
 
   const pendingCount = useMemo(
     () => periodReceipts.filter((r) => r.status === 'PENDING').length,
@@ -259,14 +256,6 @@ export function DashboardPage() {
       />
 
       <section className={styles.grid}>
-        <EmployeeProgressCard
-          employees={employees}
-          receipts={periodReceipts}
-          internalBudget={internalBudget}
-          externalBudget={externalBudget}
-          allowanceMap={allowanceMap}
-          loading={submittedEmployeesLoading}
-        />
         <PendingReceiptsCard
           receipts={periodReceipts}
           year={selectedYear}
@@ -284,6 +273,7 @@ export function DashboardPage() {
           actionSaving={checksActionSaving}
           onApproveEmployee={approveEmployeeMonth}
           onRejectEmployee={rejectEmployeeMonth}
+          onRevertEmployee={revertEmployeeMonth}
         />
       </section>
     </div>

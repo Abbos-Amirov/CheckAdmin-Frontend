@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchEmployeeChecks, fetchAdminChecks, reviewAdminCheck, type CheckReviewStatus } from '@/api/checks';
 import { fetchAllUsers } from '@/api/users';
 import { useAuth } from '@/app/providers/AuthProvider';
@@ -42,10 +42,16 @@ export function groupReceiptsByEmployee(receipts: Receipt[]): ReceiptWorkerGroup
   );
 }
 
-export function useReceiptsPage(year: number, month: number) {
+export function useReceiptsPage(
+  year: number,
+  month: number,
+  initialEmployeeId?: string | null,
+) {
   const { token } = useAuth();
   const { t } = useI18n();
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
+    initialEmployeeId ?? null,
+  );
   const [workers, setWorkers] = useState<ApiUser[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loadingWorkers, setLoadingWorkers] = useState(true);
@@ -127,7 +133,12 @@ export function useReceiptsPage(year: number, month: number) {
     void loadChecks();
   }, [loadChecks]);
 
+  const isFirstYearMonth = useRef(true);
   useEffect(() => {
+    if (isFirstYearMonth.current) {
+      isFirstYearMonth.current = false;
+      return;
+    }
     setSelectedEmployeeId(null);
   }, [year, month]);
 

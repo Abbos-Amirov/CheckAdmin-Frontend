@@ -10,7 +10,7 @@ function mapStatus(status: ApiCheck['status']): ReceiptStatus {
 export function mapApiCheckToReceipt(check: ApiCheck): Receipt {
   const user = check.user;
   const employeeId = user?._id ?? String(check.userId);
-  const employeeName = user?.fullName ?? '—';
+  const employeeName = user?.fullName ?? "O'chirilgan xodim";
   const idStr = check._id;
 
   const receiptCode = user?.employeeId
