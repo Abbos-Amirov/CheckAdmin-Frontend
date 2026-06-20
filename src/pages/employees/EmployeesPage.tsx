@@ -105,6 +105,10 @@ export function EmployeesPage() {
                       ? t('workplaceInternalShort')
                       : t('workplaceExternalShort')}
                   </span>
+                  <span className={`${styles.statusBadge} ${styles.statusOk}`}>
+                    <span className={styles.statusDot} aria-hidden />
+                    {t('statusActiveLabel')}
+                  </span>
                 </div>
                 <div className={styles.chips}>
                   <span className={styles.chip}>
@@ -127,12 +131,6 @@ export function EmployeesPage() {
                       </span>
                     </span>
                   ) : null}
-                </div>
-                <div className={styles.status}>
-                  <span className={`${styles.statusBadge} ${styles.statusOk}`}>
-                    <span className={styles.statusDot} aria-hidden />
-                    {t('statusActiveLabel')}
-                  </span>
                 </div>
               </div>
             </Card>
