@@ -8,7 +8,7 @@ const root = path.join(__dirname, '..');
 
 const PORT = Number(process.env.PORT) || 3007;
 const HOST = process.env.HOST || '0.0.0.0';
-const API_PROXY_TARGET = process.env.API_PROXY_TARGET || 'http://127.0.0.1:5001';
+const API_PROXY_TARGET = process.env.API_PROXY_TARGET || 'http://127.0.0.1:5000';
 
 const app = express();
 

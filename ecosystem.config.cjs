@@ -16,7 +16,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3007,
         HOST: '0.0.0.0',
-        API_PROXY_TARGET: 'http://127.0.0.1:5001',
+        API_PROXY_TARGET: 'http://127.0.0.1:5000',
       },
       error_file: 'logs/pm2-error.log',
       out_file: 'logs/pm2-out.log',
